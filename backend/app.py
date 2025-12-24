@@ -1,7 +1,7 @@
 import os
 
 import requests
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 
@@ -73,6 +73,27 @@ def popular_movies():
     payload, error_response = tmdb_get(
         "/movie/popular",
         params={"language": "en-US", "page": 1},
+    )
+    if error_response is not None:
+        return error_response
+
+    return jsonify(payload)
+
+
+@app.get("/api/movies/search")
+def search_movies():
+    query = request.args.get("query", "")
+    if not query or not query.strip():
+        return jsonify({"results": []})
+
+    payload, error_response = tmdb_get(
+        "/search/movie",
+        params={
+            "query": query,
+            "language": "en-US",
+            "page": 1,
+            "include_adult": False,
+        },
     )
     if error_response is not None:
         return error_response
