@@ -10,6 +10,7 @@ export interface Movie {
   release_date: string
   vote_average: number
   genres: string[]
+  reason?: string
 }
 
 type TmdbMovie = {
@@ -22,22 +23,38 @@ type TmdbMovie = {
   release_date?: string
   first_air_date?: string
   vote_average?: number
+  genres?: Array<{
+    id?: number
+    name: string
+  }> | string[]
 }
 
-const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
+const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500"
+const TMDB_BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/w1280"
 
 function mapTmdbMovieToMovie(movie: TmdbMovie): Movie {
   const releaseDate = movie.release_date || movie.first_air_date || "1970-01-01"
+
+  const toTmdbUrl = (path: string | null | undefined, kind: "poster" | "backdrop") => {
+    if (!path) return ""
+    if (path.startsWith("http://") || path.startsWith("https://")) return path
+    const normalized = path.startsWith("/") ? path : `/${path}`
+    return `${kind === "backdrop" ? TMDB_BACKDROP_BASE_URL : TMDB_POSTER_BASE_URL}${normalized}`
+  }
 
   return {
     id: movie.id,
     title: movie.title || movie.name || "Untitled",
     overview: movie.overview || "",
-    poster_path: movie.poster_path ? `${TMDB_IMAGE_BASE_URL}${movie.poster_path}` : "",
-    backdrop_path: movie.backdrop_path ? `${TMDB_IMAGE_BASE_URL}${movie.backdrop_path}` : "",
+    poster_path: toTmdbUrl(movie.poster_path, "poster"),
+    backdrop_path: toTmdbUrl(movie.backdrop_path, "backdrop"),
     release_date: releaseDate,
     vote_average: typeof movie.vote_average === "number" ? movie.vote_average : 0,
-    genres: [],
+    genres: Array.isArray(movie.genres) 
+      ? movie.genres.map((g: { name?: string } | string) => 
+          typeof g === 'string' ? g : g?.name || ''
+        ).filter((g): g is string => Boolean(g))
+      : [],
   }
 }
 
@@ -82,6 +99,27 @@ export async function getPopularMovies(): Promise<Movie[]> {
     return results.map(mapTmdbMovieToMovie)
   } catch (error) {
     console.warn("[v0] Popular movies request errored:", error)
+    return []
+  }
+}
+
+export async function getTrendingMovies(): Promise<Movie[]> {
+  try {
+    const response = await fetch("/api/movies/trending", {
+      cache: "no-store",
+      next: { revalidate: 0 },
+    })
+
+    if (!response.ok) {
+      console.warn("[v0] Trending movies request failed:", response.status)
+      return []
+    }
+
+    const data = await response.json()
+    const results = Array.isArray(data?.results) ? (data.results as TmdbMovie[]) : []
+    return results.map(mapTmdbMovieToMovie)
+  } catch (error) {
+    console.warn("[v0] Trending movies request errored:", error)
     return []
   }
 }

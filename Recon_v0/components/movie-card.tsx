@@ -1,28 +1,37 @@
 "use client"
 
 import type React from "react"
-
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Star, Plus } from "lucide-react"
+import { Star, Plus, Check } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { AspectRatio } from "@/components/ui/aspect-ratio"
 import { toast } from "@/hooks/use-toast"
 import type { Movie } from "@/lib/mock-api"
+import { isInWatchlist, toggleWatchlist } from "@/lib/watchlist"
 
 interface MovieCardProps {
   movie: Movie
+  showReason?: boolean
 }
 
-export function MovieCard({ movie }: MovieCardProps) {
-  const handleAddToWatchlist = (e: React.MouseEvent) => {
+export function MovieCard({ movie, showReason = false }: MovieCardProps) {
+  const [isInWatchlistState, setIsInWatchlistState] = useState(false)
+  
+  useEffect(() => {
+    setIsInWatchlistState(isInWatchlist(movie.id))
+  }, [movie.id])
+  
+  const handleWatchlistToggle = (e: React.MouseEvent) => {
     e.preventDefault()
-    // TODO: Connect to real backend API
+    const result = toggleWatchlist(movie)
+    setIsInWatchlistState(result.added)
     toast({
-      title: "Added to Watchlist",
-      description: `${movie.title} has been added to your watchlist.`,
+      title: result.message,
+      description: `${movie.title} ${result.added ? "added to" : "removed from"} your watchlist.`,
     })
   }
 
@@ -41,12 +50,12 @@ export function MovieCard({ movie }: MovieCardProps) {
 
           <Button
             size="icon"
-            variant="secondary"
+            variant={isInWatchlistState ? "default" : "secondary"}
             className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100"
-            onClick={handleAddToWatchlist}
+            onClick={handleWatchlistToggle}
           >
-            <Plus className="size-4" />
-            <span className="sr-only">Add to Watchlist</span>
+            {isInWatchlistState ? <Check className="size-4" /> : <Plus className="size-4" />}
+            <span className="sr-only">{isInWatchlistState ? "Remove from Watchlist" : "Add to Watchlist"}</span>
           </Button>
         </AspectRatio>
 
@@ -66,6 +75,11 @@ export function MovieCard({ movie }: MovieCardProps) {
               </Badge>
             ))}
           </div>
+          {showReason && movie.reason && (
+            <div className="mt-2 text-xs text-muted-foreground italic" title={movie.reason}>
+              {movie.reason.length > 40 ? movie.reason.substring(0, 40) + "..." : movie.reason}
+            </div>
+          )}
         </div>
       </Card>
     </Link>

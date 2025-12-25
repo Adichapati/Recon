@@ -11,3 +11,4 @@ backend/venv/
 # Environment files
 .env
 backend/.env
+.env.local

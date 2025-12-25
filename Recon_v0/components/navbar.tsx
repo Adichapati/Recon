@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Film, Search, User, Menu, LogOut } from "lucide-react"
+import { Film, Search, User, Menu, LogOut, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -23,6 +23,7 @@ export function Navbar() {
     ? [
         { href: "/home", label: "Home" },
         { href: "/search", label: "Search" },
+        { href: "/watchlist", label: "Watchlist" },
       ]
     : []
 
@@ -97,6 +98,12 @@ export function Navbar() {
                     <Link href="/profile" className="cursor-pointer">
                       <User className="mr-2 size-4" aria-hidden="true" />
                       Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/watchlist" className="cursor-pointer">
+                      <Heart className="mr-2 size-4" aria-hidden="true" />
+                      Watchlist
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
