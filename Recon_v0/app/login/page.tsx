@@ -1,15 +1,21 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Film, Mail, Lock } from "lucide-react"
+import { Film, Mail, Lock, User } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { AuthLayout } from "@/components/layouts/auth-layout"
 import { useAuth } from "@/lib/auth-context"
@@ -17,28 +23,32 @@ import { toast } from "@/hooks/use-toast"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, loginWithGoogle } = useAuth()
+
+  // ✅ CALL useAuth ONCE
+  const { login, loginAsGuest, loginWithGoogle } = useAuth()
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
+  // ---------------------------
+  // Email + Password
+  // ---------------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      // TODO: Add validation
-      // TODO: Replace with real Google OAuth + backend auth
       await login(email, password)
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       })
-      router.push("/home")
-    } catch (error) {
+      router.replace("/home")
+    } catch {
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: "Please check your credentials.",
         variant: "destructive",
       })
     } finally {
@@ -46,20 +56,26 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true)
+  // ---------------------------
+  // Google OAuth
+  // ---------------------------
+  const handleGoogleLogin = () => {
+    loginWithGoogle()
+  }
+
+  // ---------------------------
+  // Guest Login (FIXED)
+  // ---------------------------
+  const handleGuestLogin = async () => {
     try {
-      // TODO: Implement Google OAuth
-      await loginWithGoogle()
-      router.push("/home")
-    } catch (error) {
+      await loginAsGuest()
+      router.replace("/home")
+    } catch {
       toast({
-        title: "Login failed",
-        description: "Unable to sign in with Google.",
+        title: "Guest login failed",
+        description: "Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -67,25 +83,28 @@ export default function LoginPage() {
     <AuthLayout>
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center gap-2">
-          <Film className="size-12 text-primary" aria-hidden="true" />
-          <h1 className="text-2xl font-bold text-foreground">Welcome Back</h1>
-          <p className="text-muted-foreground">Sign in to continue to Recon</p>
+          <Film className="size-12 text-primary" />
+          <h1 className="text-2xl font-bold">Welcome Back</h1>
+          <p className="text-muted-foreground">
+            Sign in to continue to Recon
+          </p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Login</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+            <CardDescription>
+              Choose a method to continue
+            </CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-4">
+            {/* Email + Password */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail
-                    className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none"
-                    aria-hidden="true"
-                  />
+                  <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
@@ -93,8 +112,6 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
-                    required
-                    aria-describedby="email-description"
                   />
                 </div>
               </div>
@@ -102,10 +119,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Lock
-                    className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none"
-                    aria-hidden="true"
-                  />
+                  <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="password"
                     type="password"
@@ -113,8 +127,6 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10"
-                    required
-                    aria-describedby="password-description"
                   />
                 </div>
               </div>
@@ -124,21 +136,21 @@ export default function LoginPage() {
               </Button>
             </form>
 
+            {/* Divider */}
             <div className="relative">
               <Separator />
-              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
                 OR
               </span>
             </div>
 
+            {/* Google OAuth */}
             <Button
               variant="outline"
               className="w-full bg-transparent"
               onClick={handleGoogleLogin}
-              disabled={isLoading}
-              aria-label="Sign in with Google"
             >
-              <svg className="mr-2 size-5" viewBox="0 0 24 24" aria-hidden="true">
+              <svg className="mr-2 size-5" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -159,12 +171,19 @@ export default function LoginPage() {
               Sign in with Google
             </Button>
 
+            {/* Guest Login */}
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={handleGuestLogin}
+            >
+              <User className="mr-2 size-4" />
+              Continue as Guest
+            </Button>
+
             <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link
-                href="/signup"
-                className="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-              >
+              Don&apos;t have an account?{" "}
+              <Link href="/signup" className="text-primary hover:underline">
                 Sign up
               </Link>
             </p>

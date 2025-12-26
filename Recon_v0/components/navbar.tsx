@@ -1,8 +1,16 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Film, Search, User, Menu, LogOut, Heart } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import {
+  Film,
+  Search,
+  User,
+  Menu,
+  LogOut,
+  Heart,
+} from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,46 +19,57 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/lib/auth-context"
 
 export function Navbar() {
   const pathname = usePathname()
-  const { user, isAuthenticated, logout } = useAuth()
+  const router = useRouter()
+  const { user, loading, logout } = useAuth()
+
+  const isAuthenticated = !!user
+  const isGuest = user?.role === "guest"
 
   const navLinks = isAuthenticated
     ? [
         { href: "/home", label: "Home" },
         { href: "/search", label: "Search" },
-        { href: "/watchlist", label: "Watchlist" },
+        ...(isGuest ? [] : [{ href: "/watchlist", label: "Watchlist" }]),
       ]
     : []
 
+  const handleLogout = async () => {
+    await logout()
+    router.push("/login")
+  }
+
   return (
-    <nav
-      className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-      role="navigation"
-      aria-label="Main navigation"
-    >
+    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        {/* Left */}
         <div className="flex items-center gap-6">
           <Link
             href={isAuthenticated ? "/home" : "/"}
-            className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+            className="flex items-center gap-2"
           >
-            <Film className="size-8 text-primary" aria-hidden="true" />
-            <span className="text-xl font-bold text-foreground">Recon</span>
+            <Film className="size-8 text-primary" />
+            <span className="text-xl font-bold">Recon</span>
           </Link>
 
-          {isAuthenticated && (
-            <div className="hidden items-center gap-1 md:flex">
+          {!loading && isAuthenticated && (
+            <div className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href}>
                   <Button
                     variant={pathname === link.href ? "secondary" : "ghost"}
-                    className="text-sm"
-                    aria-current={pathname === link.href ? "page" : undefined}
+                    size="sm"
                   >
                     {link.label}
                   </Button>
@@ -60,63 +79,92 @@ export function Navbar() {
           )}
         </div>
 
+        {/* Right */}
         <div className="flex items-center gap-2">
-          {isAuthenticated ? (
+          {loading ? null : isAuthenticated ? (
             <>
               <Link href="/search" className="hidden md:block">
-                <Button variant="ghost" size="icon" aria-label="Search movies">
+                <Button variant="ghost" size="icon">
                   <Search className="size-5" />
                 </Button>
               </Link>
 
+              {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full" aria-label="User menu">
+                  <Button variant="ghost" size="icon" className="rounded-full">
                     <Avatar className="size-8">
-                      <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name || "User avatar"} />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
+                      <AvatarImage
+                        src={user?.picture || "/placeholder.svg"}
+                        alt={user?.name}
+                      />
+                      <AvatarFallback>
                         {user?.name?.[0] || "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="flex items-center gap-2 p-2">
                     <Avatar className="size-10">
-                      <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name || "User avatar"} />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
+                      <AvatarImage
+                        src={user?.picture || "/placeholder.svg"}
+                        alt={user?.name}
+                      />
+                      <AvatarFallback>
                         {user?.name?.[0] || "U"}
                       </AvatarFallback>
                     </Avatar>
+
                     <div className="flex flex-col gap-0.5">
-                      <p className="text-sm font-medium text-foreground">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground">{user?.email}</p>
+                      <p className="text-sm font-medium">{user?.name}</p>
+                      {user?.email && (
+                        <p className="text-xs text-muted-foreground">
+                          {user.email}
+                        </p>
+                      )}
+                      {isGuest && (
+                        <span className="mt-1 w-fit rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-semibold text-black">
+                          Guest
+                        </span>
+                      )}
                     </div>
                   </div>
+
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="cursor-pointer">
-                      <User className="mr-2 size-4" aria-hidden="true" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/watchlist" className="cursor-pointer">
-                      <Heart className="mr-2 size-4" aria-hidden="true" />
-                      Watchlist
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="cursor-pointer">
-                    <LogOut className="mr-2 size-4" aria-hidden="true" />
+
+                  {!isGuest && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile">
+                          <User className="mr-2 size-4" />
+                          Profile
+                        </Link>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem asChild>
+                        <Link href="/watchlist">
+                          <Heart className="mr-2 size-4" />
+                          Watchlist
+                        </Link>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 size-4" />
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Mobile Menu */}
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
+                  <Button variant="ghost" size="icon" className="md:hidden">
                     <Menu className="size-6" />
                   </Button>
                 </SheetTrigger>
@@ -124,18 +172,26 @@ export function Navbar() {
                   <SheetHeader>
                     <SheetTitle>Menu</SheetTitle>
                   </SheetHeader>
-                  <nav className="mt-6 flex flex-col gap-2" aria-label="Mobile navigation">
+
+                  <nav className="mt-6 flex flex-col gap-2">
                     {navLinks.map((link) => (
                       <Link key={link.href} href={link.href}>
                         <Button
                           variant={pathname === link.href ? "secondary" : "ghost"}
-                          className="w-full justify-start transition-colors"
-                          aria-current={pathname === link.href ? "page" : undefined}
+                          className="w-full justify-start"
                         >
                           {link.label}
                         </Button>
                       </Link>
                     ))}
+
+                    <Button
+                      variant="destructive"
+                      className="mt-4"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </Button>
                   </nav>
                 </SheetContent>
               </Sheet>

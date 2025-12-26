@@ -1,29 +1,37 @@
 "use client"
 
 import type React from "react"
-
-import { useAuth } from "@/lib/auth-context"
-import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Navbar } from "./navbar"
-
-// TODO: Replace with real Google OAuth + backend auth
-// This layout protects routes by checking mock authentication state
+import { useAuth } from "@/lib/auth-context"
 
 export function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login")
+    // ✅ Wait until auth check finishes
+    if (!loading && !user) {
+      router.replace("/login")
     }
-  }, [isAuthenticated, router])
+  }, [loading, user, router])
 
-  if (!isAuthenticated) {
+  // ⏳ Still checking session
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  // 🔒 Not authenticated → redirecting
+  if (!user) {
     return null
   }
 
+  // ✅ Authenticated (guest OR full user)
   return (
     <div className="min-h-screen">
       <Navbar />
