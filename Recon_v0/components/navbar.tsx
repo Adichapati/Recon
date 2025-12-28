@@ -13,11 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useAuth } from "@/lib/auth-context"
+import { useSession, signOut } from "next-auth/react"
 
 export function Navbar() {
   const pathname = usePathname()
-  const { user, isAuthenticated, logout } = useAuth()
+  const { data: session } = useSession()
+
+  const isAuthenticated = !!session
+  const user = session?.user
 
   const navLinks = isAuthenticated
     ? [
@@ -28,29 +31,21 @@ export function Navbar() {
     : []
 
   return (
-    <nav
-      className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-      role="navigation"
-      aria-label="Main navigation"
-    >
+    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link
-            href={isAuthenticated ? "/home" : "/"}
-            className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-          >
-            <Film className="size-8 text-primary" aria-hidden="true" />
-            <span className="text-xl font-bold text-foreground">Recon</span>
+          <Link href={isAuthenticated ? "/home" : "/"} className="flex items-center gap-2">
+            <Film className="size-8 text-primary" />
+            <span className="text-xl font-bold">Recon</span>
           </Link>
 
           {isAuthenticated && (
-            <div className="hidden items-center gap-1 md:flex">
+            <div className="hidden gap-1 md:flex">
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href}>
                   <Button
                     variant={pathname === link.href ? "secondary" : "ghost"}
                     className="text-sm"
-                    aria-current={pathname === link.href ? "page" : undefined}
                   >
                     {link.label}
                   </Button>
@@ -64,74 +59,60 @@ export function Navbar() {
           {isAuthenticated ? (
             <>
               <Link href="/search" className="hidden md:block">
-                <Button variant="ghost" size="icon" aria-label="Search movies">
+                <Button variant="ghost" size="icon">
                   <Search className="size-5" />
                 </Button>
               </Link>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full" aria-label="User menu">
+                  <Button variant="ghost" size="icon" className="rounded-full">
                     <Avatar className="size-8">
-                      <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name || "User avatar"} />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {user?.name?.[0] || "U"}
+                      <AvatarImage src={user?.image ?? "/placeholder.svg"} />
+                      <AvatarFallback>
+                        {user?.name?.[0] ?? "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent align="end" className="w-56">
-                  <div className="flex items-center gap-2 p-2">
-                    <Avatar className="size-10">
-                      <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name || "User avatar"} />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {user?.name?.[0] || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col gap-0.5">
-                      <p className="text-sm font-medium text-foreground">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground">{user?.email}</p>
-                    </div>
+                  <div className="p-2">
+                    <p className="text-sm font-medium">{user?.name}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/profile" className="cursor-pointer">
-                      <User className="mr-2 size-4" aria-hidden="true" />
-                      Profile
+                    <Link href="/profile">
+                      <User className="mr-2 size-4" /> Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/watchlist" className="cursor-pointer">
-                      <Heart className="mr-2 size-4" aria-hidden="true" />
-                      Watchlist
+                    <Link href="/watchlist">
+                      <Heart className="mr-2 size-4" /> Watchlist
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="cursor-pointer">
-                    <LogOut className="mr-2 size-4" aria-hidden="true" />
-                    Logout
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <LogOut className="mr-2 size-4" /> Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
+                  <Button variant="ghost" size="icon" className="md:hidden">
                     <Menu className="size-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[280px]">
+                <SheetContent side="right">
                   <SheetHeader>
                     <SheetTitle>Menu</SheetTitle>
                   </SheetHeader>
-                  <nav className="mt-6 flex flex-col gap-2" aria-label="Mobile navigation">
+                  <nav className="mt-6 flex flex-col gap-2">
                     {navLinks.map((link) => (
                       <Link key={link.href} href={link.href}>
-                        <Button
-                          variant={pathname === link.href ? "secondary" : "ghost"}
-                          className="w-full justify-start transition-colors"
-                          aria-current={pathname === link.href ? "page" : undefined}
-                        >
+                        <Button variant="ghost" className="w-full justify-start">
                           {link.label}
                         </Button>
                       </Link>
