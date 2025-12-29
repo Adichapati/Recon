@@ -31,7 +31,18 @@ Continue building your app on:
 
 ## Local development
 
-Backend (Flask):
+Frontend (Next.js, TMDB-only — default):
+
+1. Create `Recon_v0/.env.local` using `Recon_v0/.env.example`
+2. Set `TMDB_API_KEY` in `Recon_v0/.env.local`
+3. Make sure `BACKEND_URL` is blank/removed (so Next serves `/api/movies/*` itself)
+4. From `Recon_v0/`:
+	- `npm install`
+	- `npm run dev` (runs on `http://localhost:3000`)
+
+Backend (Flask — optional):
+
+If you want to run the legacy Flask backend instead of Next.js TMDB routes:
 
 1. Create `backend/.env` using `backend/.env.example`
 2. From the repo root:
@@ -40,13 +51,7 @@ Backend (Flask):
 	- Activate venv
 	- `pip install -r requirements.txt`
 	- `python app.py` (runs on `http://localhost:5000`)
-
-Frontend (Next.js):
-
-1. Create `Recon_v0/.env.local` using `Recon_v0/.env.example`
-2. From `Recon_v0/`:
-	- `npm install`
-	- `npm run dev` (runs on `http://localhost:3000`)
+3. Set `BACKEND_URL=http://localhost:5000` in `Recon_v0/.env.local`
 
 Note: if PowerShell blocks `npm` due to execution policy, run via `cmd`:
 
@@ -56,7 +61,8 @@ Environment variables (frontend):
 
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 - `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
-- `BACKEND_URL` (defaults to `http://localhost:5000`)
+- `TMDB_API_KEY` (server-only; required for real TMDB data)
+- `BACKEND_URL` (optional; if set, proxies `/api/movies/*` to Flask)
 
 Supabase:
 

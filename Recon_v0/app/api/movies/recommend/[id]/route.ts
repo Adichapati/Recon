@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { getSupabaseAdminClient } from "@/lib/supabase"
+import { tmdbFetchJson } from "@/lib/tmdb-server"
 
 export const runtime = "nodejs"
 
@@ -13,6 +14,7 @@ type BackendRecommendedMovie = {
   vote_average?: number
   overview?: string
   genres?: string[]
+  genre_ids?: number[]
   similarity_score?: number
   reason?: string
 }
@@ -33,10 +35,6 @@ type WatchlistRow = {
 const ANALYZE_WATCHLIST_LIMIT = 25
 const RECENT_LIMIT = 5
 const TOP_GENRES_LIMIT = 5
-
-function backendBaseUrl() {
-  return process.env.BACKEND_URL || "http://localhost:5000"
-}
 
 function safeArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : []
@@ -75,14 +73,29 @@ function jaccard(a: Set<string>, b: Set<string>) {
   return union === 0 ? 0 : intersection / union
 }
 
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init)
-  if (!res.ok) {
-    const text = await res.text().catch(() => "")
-    throw new Error(`${res.status} ${res.statusText}${text ? ` - ${text}` : ""}`)
-  }
-  return (await res.json()) as T
+type TmdbGenre = { id: number; name: string }
+type TmdbGenreListResponse = { genres?: TmdbGenre[] }
+
+type TmdbMovieDetails = {
+  id: number
+  title?: string
+  genres?: Array<{ id?: number; name?: string }>
 }
+
+type TmdbRecommendationsResponse = {
+  results?: Array<{
+    id: number
+    title?: string
+    poster_path?: string | null
+    backdrop_path?: string | null
+    release_date?: string
+    vote_average?: number
+    overview?: string
+    genre_ids?: number[]
+  }>
+}
+
+type TmdbRecommendationMovie = NonNullable<TmdbRecommendationsResponse["results"]>[number]
 
 async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = new Array(items.length)
@@ -106,19 +119,61 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ error: "Invalid movie id" }, { status: 400 })
   }
 
-  // Always get the base recommendations from the existing Flask route.
-  // This keeps the route stable and the logic deterministic.
-  let base: BackendRecommendResponse
+  // Base recommendations from TMDB (server-side; works on Vercel without Flask).
+  let baseResults: BackendRecommendedMovie[] = []
+  let originalMovie: BackendRecommendResponse["original_movie"] | undefined
+  let genreMap = new Map<number, string>()
   try {
-    base = await fetchJson<BackendRecommendResponse>(
-      `${backendBaseUrl()}/api/movies/recommend/${encodeURIComponent(String(movieId))}`
-    )
+    const [recs, details, genreList] = await Promise.all([
+      tmdbFetchJson<TmdbRecommendationsResponse>(`/movie/${encodeURIComponent(String(movieId))}/recommendations`, {
+        language: "en-US",
+        page: 1,
+      }),
+      tmdbFetchJson<TmdbMovieDetails>(`/movie/${encodeURIComponent(String(movieId))}`, {
+        language: "en-US",
+      }),
+      tmdbFetchJson<TmdbGenreListResponse>("/genre/movie/list", {
+        language: "en-US",
+      }),
+    ])
+
+    const genres = safeArray<TmdbGenre>(genreList.genres)
+    genreMap = new Map(genres.map((g) => [g.id, g.name]))
+
+    originalMovie = {
+      id: details?.id,
+      title: details?.title,
+      genres: safeArray(details?.genres).map((g: any) => String(g?.name ?? "")).filter(Boolean),
+    }
+
+    baseResults = safeArray<TmdbRecommendationMovie>(recs.results).map((m) => {
+      const genreNames = safeArray<number>(m.genre_ids)
+        .map((gid) => genreMap.get(gid))
+        .filter(Boolean) as string[]
+
+      return {
+        id: m.id,
+        title: m.title,
+        poster_path: m.poster_path ?? undefined,
+        backdrop_path: m.backdrop_path ?? undefined,
+        release_date: m.release_date,
+        vote_average: m.vote_average,
+        overview: m.overview,
+        genre_ids: safeArray<number>(m.genre_ids),
+        genres: genreNames,
+        // Preserve original ordering as a weak prior.
+        similarity_score: 0,
+      }
+    })
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to fetch recommendations"
     return NextResponse.json({ error: message }, { status: 502 })
   }
 
-  const baseResults = safeArray<BackendRecommendedMovie>(base.results)
+  const base: BackendRecommendResponse = {
+    results: baseResults,
+    original_movie: originalMovie,
+  }
 
   // If the user isn't signed in, return the base response unchanged.
   const session = await auth()
@@ -153,15 +208,20 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const watchlistIds = new Set(watchlistRows.map((r) => Number(r.movie_id)).filter(Number.isFinite))
 
   // Fetch details for watchlist movies (genres), prioritizing the most recent.
-  // We use the existing Flask `/api/movies/:id` endpoint so mapping is consistent.
+  // Use TMDB directly so this works without Flask.
   const watchlistDetails = await mapWithConcurrency(
     watchlistRows.slice(0, ANALYZE_WATCHLIST_LIMIT),
     4,
     async (row) => {
       try {
-        return await fetchJson<{ genres?: string[]; title?: string; id?: number }>(
-          `${backendBaseUrl()}/api/movies/${encodeURIComponent(String(row.movie_id))}`
-        )
+        const d = await tmdbFetchJson<any>(`/movie/${encodeURIComponent(String(row.movie_id))}`, {
+          language: "en-US",
+        })
+        return {
+          id: d?.id,
+          title: d?.title,
+          genres: safeArray(d?.genres).map((g: any) => String(g?.name ?? "")).filter(Boolean),
+        }
       } catch {
         return { id: row.movie_id, title: row.movie_title ?? undefined, genres: [] }
       }
@@ -182,8 +242,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   // - Recent similarity: favors movies whose genres overlap with recently added movies
   // Also, remove movies already in the watchlist.
   const reranked = baseResults
-    .filter((m) => !watchlistIds.has(Number(m.id)))
-    .map((m) => {
+    .map((m, idx) => ({ m, idx }))
+    .filter(({ m }) => !watchlistIds.has(Number(m.id)))
+    .map(({ m, idx }) => {
       const genres = safeArray<string>(m.genres).map(normalizeGenre).filter(Boolean) as string[]
       const genreSet = new Set(genres)
 
@@ -203,11 +264,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         recentBoost = Math.max(recentBoost, jaccard(genreSet, rs))
       }
 
-      const baseScore = typeof m.similarity_score === "number" ? m.similarity_score : 0
-
-      // Keep the existing content-based score as the main driver.
-      // Add small, explainable boosts.
-      const finalScore = baseScore + 0.15 * genreBoost + 0.15 * recentBoost
+      // Preserve TMDB ordering as the primary signal.
+      const baseRankScore = (baseResults.length - idx) / Math.max(1, baseResults.length)
+      const finalScore = baseRankScore + 0.15 * genreBoost + 0.15 * recentBoost
 
       const reasonBits: string[] = []
       if (genreBoost > 0.05) reasonBits.push("Matches your watchlist genres")

@@ -66,8 +66,22 @@ function mapTmdbMovieToMovie(movie: TmdbMovie): Movie {
 
 async function safeFetch(url: string) {
   const res = await fetch(url, { cache: "no-store" })
-  if (!res.ok) throw new Error(`Request failed: ${res.status}`)
-  return res.json()
+  const tmdbKeyPresent = res.headers.get("x-tmdb-key-present") === "1"
+  const json = await res.json().catch(() => null)
+
+  if (!res.ok) {
+    const message =
+      typeof (json as any)?.error === "string"
+        ? (json as any).error
+        : `Request failed: ${res.status}`
+
+    const err = new Error(message) as Error & { status?: number; tmdbKeyPresent?: boolean }
+    err.status = res.status
+    err.tmdbKeyPresent = tmdbKeyPresent
+    throw err
+  }
+
+  return json
 }
 
 export async function getPopularMovies(): Promise<Movie[]> {
@@ -75,6 +89,9 @@ export async function getPopularMovies(): Promise<Movie[]> {
     const data = await safeFetch("/api/movies/popular")
     return (data.results ?? []).map(mapTmdbMovieToMovie)
   } catch (err) {
+    if (err && typeof err === "object" && (err as any).tmdbKeyPresent) {
+      throw err
+    }
     console.warn("[v0] Falling back to mock popular movies")
     return mockApi.getPopular()
   }
@@ -85,6 +102,9 @@ export async function getTrendingMovies(): Promise<Movie[]> {
     const data = await safeFetch("/api/movies/trending")
     return (data.results ?? []).map(mapTmdbMovieToMovie)
   } catch (err) {
+    if (err && typeof err === "object" && (err as any).tmdbKeyPresent) {
+      throw err
+    }
     console.warn("[v0] Falling back to mock trending movies")
     return mockApi.getTrending()
   }
@@ -99,6 +119,9 @@ export async function searchMovies(query: string): Promise<Movie[]> {
     )
     return (data.results ?? []).map(mapTmdbMovieToMovie)
   } catch (err) {
+    if (err && typeof err === "object" && (err as any).tmdbKeyPresent) {
+      throw err
+    }
     console.warn("[v0] Falling back to mock search")
     return mockApi.search(query)
   }
