@@ -35,14 +35,24 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
   const [recommendedError, setRecommendedError] = useState(false)
   const [isInWatchlistState, setIsInWatchlistState] = useState(false)
 
-  const fetchMovie = async (signal?: AbortSignal) => {
+  const fetchMovie = async (maybeSignal?: unknown) => {
     try {
       setIsLoadingMovie(true)
       setMovieError(false)
+
+      // `fetchMovie` is also used as a retry handler. Some button components
+      // call it with a click event, so we must guard against non-AbortSignal values.
+      const signal =
+        typeof maybeSignal === "object" &&
+        maybeSignal !== null &&
+        "aborted" in (maybeSignal as any) &&
+        typeof (maybeSignal as any).addEventListener === "function"
+          ? (maybeSignal as AbortSignal)
+          : undefined
+
       const response = await fetch(`/api/movies/${encodeURIComponent(id)}`, {
         cache: "no-store",
-        next: { revalidate: 0 },
-        signal,
+        ...(signal ? { signal } : {}),
       })
 
       if (!response.ok) {
@@ -51,8 +61,30 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
         return
       }
 
-      const data = (await response.json()) as Movie
-      setMovie(data)
+      const raw = (await response.json()) as any
+      const normalized: Movie = {
+        id: Number(raw?.id),
+        title: String(raw?.title ?? "Untitled"),
+        overview: String(raw?.overview ?? ""),
+        poster_path: toTmdbUrl(raw?.poster_path, "poster"),
+        backdrop_path: toTmdbUrl(raw?.backdrop_path, "backdrop"),
+        release_date: String(raw?.release_date ?? "1970-01-01"),
+        vote_average:
+          typeof raw?.vote_average === "number"
+            ? raw.vote_average
+            : Number(raw?.vote_average ?? 0) || 0,
+        genres: Array.isArray(raw?.genres)
+          ? raw.genres.map((g: any) => String(g)).filter(Boolean)
+          : [],
+      }
+
+      if (!Number.isFinite(normalized.id)) {
+        setMovie(null)
+        setMovieError(true)
+        return
+      }
+
+      setMovie(normalized)
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         return
@@ -68,12 +100,9 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
     try {
       setIsLoadingRecommended(true)
       setRecommendedError(false)
-      
-      // Use the environment variable for the API base URL
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || ''
-      const response = await fetch(`${apiBaseUrl}/api/movies/recommend/${id}`, {
+
+      const response = await fetch(`/api/movies/recommend/${encodeURIComponent(id)}`, {
         cache: "no-store",
-        next: { revalidate: 0 },
       })
 
       if (!response.ok) {
@@ -118,17 +147,18 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
   
   useEffect(() => {
     if (movie) {
-      setIsInWatchlistState(isInWatchlist(movie.id))
+      isInWatchlist(movie.id).then(setIsInWatchlistState)
     }
   }, [movie])
 
   const handleWatchlistToggle = () => {
     if (!movie) return
-    const result = toggleWatchlist(movie)
-    setIsInWatchlistState(result.added)
-    toast({
-      title: result.message,
-      description: `${movie.title} ${result.added ? "added to" : "removed from"} your watchlist.`,
+    toggleWatchlist(movie).then((result) => {
+      setIsInWatchlistState(result.added)
+      toast({
+        title: result.message,
+        description: `${movie.title} ${result.added ? "added to" : "removed from"} your watchlist.`,
+      })
     })
   }
 
@@ -146,11 +176,18 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
         <ErrorState
           title="Failed to load movie details"
           description="We couldn't load the movie information. Please try again."
-          onRetry={fetchMovie}
+          onRetry={() => fetchMovie()}
         />
       </ProtectedLayout>
     )
   }
+
+  const ratingText = Number.isFinite(movie.vote_average) ? movie.vote_average.toFixed(1) : "0.0"
+  const releaseYear = (() => {
+    const d = new Date(movie.release_date)
+    const y = d.getFullYear()
+    return Number.isFinite(y) ? String(y) : "Unknown"
+  })()
 
   return (
     <ProtectedLayout>
@@ -183,12 +220,12 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
                   <div className="mb-4 flex flex-wrap items-center gap-4 text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Star className="size-5 fill-primary text-primary" aria-hidden="true" />
-                      <span className="text-lg font-semibold text-foreground">{movie.vote_average.toFixed(1)}</span>
+                      <span className="text-lg font-semibold text-foreground">{ratingText}</span>
                       <span className="text-sm">/10</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="size-4" aria-hidden="true" />
-                      <span>{new Date(movie.release_date).getFullYear()}</span>
+                      <span>{releaseYear}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="size-4" aria-hidden="true" />
@@ -197,7 +234,7 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
                   </div>
 
                   <div className="mb-6 flex flex-wrap gap-2">
-                    {movie.genres.map((genre) => (
+                    {(movie.genres ?? []).map((genre) => (
                       <Badge key={genre} variant="secondary">
                         {genre}
                       </Badge>

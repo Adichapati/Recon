@@ -16,17 +16,16 @@ const nextConfig = {
   },
 
   async rewrites() {
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:5000"
     return [
-      // ✅ Let NextAuth handle auth routes
+      // Proxy backend movie endpoints (leave NextAuth /api/auth/* alone)
       {
-        source: "/api/auth/:path*",
-        destination: "/api/auth/:path*",
+        source: "/api/movies/:path*",
+        destination: `${backendUrl}/api/movies/:path*`,
       },
-
-      // ✅ Proxy all other API routes to backend
       {
-        source: "/api/:path*",
-        destination: "http://localhost:5000/api/:path*",
+        source: "/api/health",
+        destination: `${backendUrl}/api/health`,
       },
     ]
   },

@@ -28,3 +28,37 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+
+## Local development
+
+Backend (Flask):
+
+1. Create `backend/.env` using `backend/.env.example`
+2. From the repo root:
+	- `cd backend`
+	- `python -m venv .venv`
+	- Activate venv
+	- `pip install -r requirements.txt`
+	- `python app.py` (runs on `http://localhost:5000`)
+
+Frontend (Next.js):
+
+1. Create `Recon_v0/.env.local` using `Recon_v0/.env.example`
+2. From `Recon_v0/`:
+	- `npm install`
+	- `npm run dev` (runs on `http://localhost:3000`)
+
+Note: if PowerShell blocks `npm` due to execution policy, run via `cmd`:
+
+- `cmd /c npm run dev`
+
+Environment variables (frontend):
+
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
+- `BACKEND_URL` (defaults to `http://localhost:5000`)
+
+Supabase:
+
+- Public (safe to expose to the browser): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- Server-only (required for watchlist + user sync writes): `SUPABASE_SERVICE_ROLE_KEY`

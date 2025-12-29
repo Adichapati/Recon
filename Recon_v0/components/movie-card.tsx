@@ -22,16 +22,19 @@ export function MovieCard({ movie, showReason = false }: MovieCardProps) {
   const [isInWatchlistState, setIsInWatchlistState] = useState(false)
   
   useEffect(() => {
-    setIsInWatchlistState(isInWatchlist(movie.id))
+    isInWatchlist(movie.id).then(setIsInWatchlistState)
   }, [movie.id])
   
   const handleWatchlistToggle = (e: React.MouseEvent) => {
     e.preventDefault()
-    const result = toggleWatchlist(movie)
-    setIsInWatchlistState(result.added)
-    toast({
-      title: result.message,
-      description: `${movie.title} ${result.added ? "added to" : "removed from"} your watchlist.`,
+    e.stopPropagation()
+
+    toggleWatchlist(movie).then((result) => {
+      setIsInWatchlistState(result.added)
+      toast({
+        title: result.message,
+        description: `${movie.title} ${result.added ? "added to" : "removed from"} your watchlist.`,
+      })
     })
   }
 

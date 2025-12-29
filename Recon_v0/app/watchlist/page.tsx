@@ -15,21 +15,10 @@ export default function WatchlistPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const loadWatchlist = () => {
+    const loadWatchlist = async () => {
       try {
-        const items = getWatchlist()
-        // Convert WatchlistItem back to Movie for display
-        const movies: Movie[] = items.map(item => ({
-          id: item.id,
-          title: item.title,
-          overview: item.overview,
-          poster_path: item.poster_path,
-          backdrop_path: item.backdrop_path,
-          release_date: item.release_date,
-          vote_average: item.vote_average,
-          genres: item.genres,
-          reason: item.reason
-        }))
+        const items = await getWatchlist(true)
+        const movies: Movie[] = items.map(({ addedAt: _addedAt, ...movie }) => movie)
         setWatchlist(movies)
       } catch (error) {
         console.error("[Watchlist] Error loading watchlist:", error)
@@ -46,29 +35,34 @@ export default function WatchlistPage() {
     loadWatchlist()
   }, [])
 
-  const handleRemoveFromWatchlist = (movieId: number, movieTitle: string) => {
-    const removed = removeFromWatchlist(movieId)
-    if (removed) {
-      setWatchlist(prev => prev.filter(movie => movie.id !== movieId))
-      toast({
-        title: "Removed from watchlist",
-        description: `${movieTitle} has been removed from your watchlist.`,
-      })
-    } else {
+  const handleRemoveFromWatchlist = async (movieId: number, movieTitle: string) => {
+    const removed = await removeFromWatchlist(movieId)
+    if (!removed) {
       toast({
         title: "Error",
         description: "Failed to remove movie from watchlist.",
-        variant: "destructive"
+        variant: "destructive",
       })
+      return
     }
+
+    setWatchlist((prev) => prev.filter((movie) => movie.id !== movieId))
+    toast({
+      title: "Removed from watchlist",
+      description: `${movieTitle} has been removed from your watchlist.`,
+    })
   }
 
-  const handleClearWatchlist = () => {
+  const handleClearWatchlist = async () => {
     if (watchlist.length === 0) return
     
     if (confirm("Are you sure you want to clear your entire watchlist?")) {
       try {
-        localStorage.removeItem("movie_watchlist")
+        const items = await getWatchlist(true)
+        const results = await Promise.all(items.map((item) => removeFromWatchlist(item.id)))
+        if (results.some((ok) => !ok)) {
+          throw new Error("Failed to clear some items")
+        }
         setWatchlist([])
         toast({
           title: "Watchlist cleared",

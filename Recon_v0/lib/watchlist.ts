@@ -1,44 +1,97 @@
 import type { Movie } from "./mock-api"
 
-const WATCHLIST_KEY = "movie_watchlist"
+type WatchlistRow = {
+  user_id?: string
+  movie_id?: number
+  movie_title?: string
+  poster_path?: string
+  created_at?: string
+}
 
 export interface WatchlistItem extends Movie {
   addedAt: string
 }
 
-export function getWatchlist(): WatchlistItem[] {
-  if (typeof window === "undefined") return []
-  
-  try {
-    const stored = localStorage.getItem(WATCHLIST_KEY)
-    if (!stored) return []
-    
-    const parsed = JSON.parse(stored)
-    return Array.isArray(parsed) ? parsed : []
-  } catch (error) {
-    console.error("[Watchlist] Error reading watchlist:", error)
-    return []
+let cachedItems: WatchlistItem[] | null = null
+let cacheTimestamp = 0
+const CACHE_TTL_MS = 5_000
+
+function rowToItem(row: WatchlistRow): WatchlistItem | null {
+  const id = Number(row.movie_id)
+  if (!Number.isFinite(id)) return null
+
+  return {
+    id,
+    title: row.movie_title ?? "Untitled",
+    overview: "",
+    poster_path: row.poster_path ?? "",
+    backdrop_path: "",
+    release_date: "1970-01-01",
+    vote_average: 0,
+    genres: [],
+    addedAt: row.created_at ?? new Date().toISOString(),
   }
 }
 
-export function addToWatchlist(movie: Movie): boolean {
-  if (typeof window === "undefined") return false
-  
+async function fetchJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
+  const res = await fetch(input, {
+    cache: "no-store",
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers || {}),
+    },
+  })
+
+  if (!res.ok) {
+    let details = ""
+    try {
+      const body = (await res.json()) as any
+      if (body?.error) details = String(body.error)
+    } catch {
+      try {
+        details = await res.text()
+      } catch {
+        // ignore
+      }
+    }
+
+    const suffix = details ? ` - ${details}` : ""
+    throw new Error(`Watchlist request failed: ${res.status}${suffix}`)
+  }
+  return res.json() as Promise<T>
+}
+
+export async function getWatchlist(forceRefresh = false): Promise<WatchlistItem[]> {
+  if (!forceRefresh && cachedItems && Date.now() - cacheTimestamp < CACHE_TTL_MS) {
+    return cachedItems
+  }
+
+  const rows = await fetchJson<WatchlistRow[]>("/api/watchlist", {
+    method: "GET",
+  })
+
+  const items = (Array.isArray(rows) ? rows : [])
+    .map(rowToItem)
+    .filter(Boolean) as WatchlistItem[]
+
+  cachedItems = items
+  cacheTimestamp = Date.now()
+  return items
+}
+
+export async function addToWatchlist(movie: Movie): Promise<boolean> {
   try {
-    const watchlist = getWatchlist()
-    
-    // Check if movie already exists
-    if (watchlist.some(item => item.id === movie.id)) {
-      return false // Already in watchlist
-    }
-    
-    const watchlistItem: WatchlistItem = {
-      ...movie,
-      addedAt: new Date().toISOString()
-    }
-    
-    watchlist.push(watchlistItem)
-    localStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist))
+    await fetchJson("/api/watchlist", {
+      method: "POST",
+      body: JSON.stringify({
+        id: movie.id,
+        title: movie.title,
+        poster_path: movie.poster_path,
+      }),
+    })
+
+    await getWatchlist(true)
     return true
   } catch (error) {
     console.error("[Watchlist] Error adding to watchlist:", error)
@@ -46,18 +99,14 @@ export function addToWatchlist(movie: Movie): boolean {
   }
 }
 
-export function removeFromWatchlist(movieId: number): boolean {
-  if (typeof window === "undefined") return false
-  
+export async function removeFromWatchlist(movieId: number): Promise<boolean> {
   try {
-    const watchlist = getWatchlist()
-    const filtered = watchlist.filter(item => item.id !== movieId)
-    
-    if (filtered.length === watchlist.length) {
-      return false // Movie not found
-    }
-    
-    localStorage.setItem(WATCHLIST_KEY, JSON.stringify(filtered))
+    await fetchJson("/api/watchlist", {
+      method: "DELETE",
+      body: JSON.stringify({ movieId }),
+    })
+
+    await getWatchlist(true)
     return true
   } catch (error) {
     console.error("[Watchlist] Error removing from watchlist:", error)
@@ -65,30 +114,28 @@ export function removeFromWatchlist(movieId: number): boolean {
   }
 }
 
-export function isInWatchlist(movieId: number): boolean {
-  if (typeof window === "undefined") return false
-  
+export async function isInWatchlist(movieId: number): Promise<boolean> {
   try {
-    const watchlist = getWatchlist()
-    return watchlist.some(item => item.id === movieId)
+    const list = await getWatchlist(false)
+    return list.some((item) => item.id === movieId)
   } catch (error) {
     console.error("[Watchlist] Error checking watchlist:", error)
     return false
   }
 }
 
-export function toggleWatchlist(movie: Movie): { added: boolean; message: string } {
-  if (isInWatchlist(movie.id)) {
-    const removed = removeFromWatchlist(movie.id)
+export async function toggleWatchlist(movie: Movie): Promise<{ added: boolean; message: string }> {
+  if (await isInWatchlist(movie.id)) {
+    const removed = await removeFromWatchlist(movie.id)
     return {
       added: false,
-      message: removed ? "Removed from watchlist" : "Failed to remove from watchlist"
+      message: removed ? "Removed from watchlist" : "Failed to remove from watchlist",
     }
-  } else {
-    const added = addToWatchlist(movie)
-    return {
-      added: true,
-      message: added ? "Added to watchlist" : "Failed to add to watchlist"
-    }
+  }
+
+  const added = await addToWatchlist(movie)
+  return {
+    added: true,
+    message: added ? "Added to watchlist" : "Failed to add to watchlist",
   }
 }

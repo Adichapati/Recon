@@ -1,4 +1,5 @@
 import os
+import time
 
 from typing import Optional
 
@@ -13,7 +14,13 @@ app = Flask(__name__)
 CORS(app)
 
 
-def tmdb_get(path: str, *, params=None, soft_fail: bool = True):
+def tmdb_get(
+    path: str,
+    *,
+    params=None,
+    soft_fail: bool = True,
+    retries: int = 1,
+):
     api_key = os.getenv("TMDB_API_KEY")
     if not api_key:
         return None, (jsonify({"error": "TMDB_API_KEY not set"}), 500)
@@ -32,21 +39,41 @@ def tmdb_get(path: str, *, params=None, soft_fail: bool = True):
     else:
         query_params["api_key"] = api_key
 
-    try:
-        response = requests.get(url, params=query_params, headers=headers, timeout=10)
-    except requests.RequestException:
-        if soft_fail:
-            # In dev mode, Next.js can trigger duplicate / cancelled requests (e.g. Strict Mode).
-            # Treat transient upstream failures as non-fatal.
-            return (
-                {"results": [], "warning": "TMDB request failed or was interrupted"},
-                None,
+    response = None
+    last_exc = None
+    for attempt in range(max(0, int(retries)) + 1):
+        try:
+            response = requests.get(url, params=query_params, headers=headers, timeout=10)
+        except requests.RequestException as exc:
+            last_exc = exc
+            if attempt < retries:
+                time.sleep(0.25)
+                continue
+
+            if soft_fail:
+                # In dev mode, Next.js can trigger duplicate / cancelled requests (e.g. Strict Mode).
+                # Treat transient upstream failures as non-fatal.
+                return (
+                    {"results": [], "warning": "TMDB request failed or was interrupted"},
+                    None,
+                )
+
+            return None, (
+                jsonify({"error": "TMDB request failed or was interrupted"}),
+                502,
             )
 
-        return None, (
-            jsonify({"error": "TMDB request failed or was interrupted"}),
-            200,
-        )
+        # Retry common transient upstream errors.
+        if response is not None and response.status_code in (429, 500, 502, 503, 504) and attempt < retries:
+            time.sleep(0.25)
+            continue
+        break
+
+    if response is None:
+        # Should be unreachable, but keep a safe fallback.
+        if soft_fail:
+            return ({"results": [], "warning": "TMDB request failed"}, None)
+        return None, (jsonify({"error": "TMDB request failed"}), 502)
 
     try:
         payload = response.json()
@@ -340,7 +367,9 @@ def recommend_movies(movie_id: int):
         # Get popular movies as candidate pool
         candidates, error_response = tmdb_get(
             "/movie/popular",
-            params={"language": "en-US", "page": 1, "per_page": 50}
+            params={"language": "en-US", "page": 1, "per_page": 50},
+            soft_fail=False,
+            retries=2,
         )
         if error_response is not None:
             return error_response
