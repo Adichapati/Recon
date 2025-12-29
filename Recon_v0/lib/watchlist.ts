@@ -16,6 +16,11 @@ let cachedItems: WatchlistItem[] | null = null
 let cacheTimestamp = 0
 const CACHE_TTL_MS = 5_000
 
+export function clearWatchlistCache() {
+  cachedItems = null
+  cacheTimestamp = 0
+}
+
 function rowToItem(row: WatchlistRow): WatchlistItem | null {
   const id = Number(row.movie_id)
   if (!Number.isFinite(id)) return null

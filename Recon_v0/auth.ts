@@ -28,23 +28,50 @@ export const { handlers, auth } = NextAuth({
   events: {
     async signIn({ user }) {
       try {
-        if (!user?.id) return
         if (!user.email) return
 
         const supabase = getSupabaseAdminClient()
-        const payload = {
+
+        // `user.id` may change between sign-ins when using JWT strategy with no adapter.
+        // We treat Supabase `users.email` as the stable identity anchor and re-use the
+        // existing `users.id` when present.
+        const { data: existing, error: findError } = await supabase
+          .from("users")
+          .select("id")
+          .eq("email", user.email)
+          .maybeSingle()
+
+        if (findError) {
+          console.error("[auth] Supabase user lookup failed", findError)
+          return
+        }
+
+        if (existing?.id) {
+          const { error: updateError } = await supabase
+            .from("users")
+            .update({
+              name: user.name ?? null,
+              image: user.image ?? null,
+            })
+            .eq("id", existing.id)
+
+          if (updateError) {
+            console.error("[auth] Supabase user update failed", updateError)
+          }
+          return
+        }
+
+        if (!user?.id) return
+
+        const { error: insertError } = await supabase.from("users").insert({
           id: String(user.id),
           email: user.email,
           name: user.name ?? null,
           image: user.image ?? null,
-        }
+        })
 
-        const { error } = await supabase
-          .from("users")
-          .upsert(payload, { onConflict: "id" })
-
-        if (error) {
-          console.error("[auth] Supabase user upsert failed", error)
+        if (insertError) {
+          console.error("[auth] Supabase user insert failed", insertError)
         }
       } catch {
         console.error("[auth] Supabase user upsert failed")
@@ -54,8 +81,29 @@ export const { handlers, auth } = NextAuth({
 
   callbacks: {
     async jwt({ token, user }) {
-      if (user?.id) token.id = user.id
-      if (!token.id && token.sub) token.id = token.sub
+      // On sign-in, prefer the stable Supabase `users.id` tied to the email.
+      // Without an adapter, Auth.js may generate a new user.id per login.
+      if (user?.email) {
+        try {
+          const supabase = getSupabaseAdminClient()
+          const { data: existing, error } = await supabase
+            .from("users")
+            .select("id")
+            .eq("email", user.email)
+            .maybeSingle()
+
+          if (error) {
+            console.error("[auth] Supabase user lookup failed", error)
+          } else if (existing?.id) {
+            token.id = String(existing.id)
+          }
+        } catch (err) {
+          console.error("[auth] Supabase user lookup failed", err)
+        }
+      }
+
+      if (!token.id && user?.id) token.id = String(user.id)
+      if (!token.id && token.sub) token.id = String(token.sub)
       return token
     },
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { getSupabaseAdminClient } from "@/lib/supabase"
+import type { Session } from "next-auth"
 
 export const runtime = "nodejs"
 
@@ -10,10 +11,12 @@ type WatchlistInsertBody = {
   poster_path?: string
 }
 
-export async function GET() {
-  const session = await auth()
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+async function resolveStableUserId(session: Session | null) {
+  const email = session?.user?.email ?? null
+  const sessionUserId = session?.user?.id ? String(session.user.id) : null
+
+  if (!email && !sessionUserId) {
+    return { ok: false as const, error: "Unauthorized" }
   }
 
   let supabase
@@ -21,13 +24,63 @@ export async function GET() {
     supabase = getSupabaseAdminClient()
   } catch (err) {
     const message = err instanceof Error ? err.message : "Server misconfigured"
-    return NextResponse.json({ error: message }, { status: 500 })
+    return { ok: false as const, error: message, status: 500 as const }
   }
+
+  // If we have an email, prefer the existing Supabase `users.id` for that email.
+  if (email) {
+    const { data: existing, error } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle()
+
+    if (error) {
+      console.error("[watchlist][resolveUserId] Supabase lookup error", error)
+      const msg = String(error.message || "")
+      return { ok: false as const, error: msg || "User lookup failed", status: 500 as const }
+    }
+
+    if (existing?.id) {
+      return { ok: true as const, userId: String(existing.id), supabase }
+    }
+  }
+
+  // Fallback: use session user id (first login before user row exists).
+  if (sessionUserId && email) {
+    const { error: insertError } = await supabase.from("users").insert({
+      id: sessionUserId,
+      email,
+      name: session?.user?.name ?? null,
+      image: (session?.user as { image?: string | null } | null)?.image ?? null,
+    })
+
+    if (insertError) {
+      console.error("[watchlist][resolveUserId] Supabase user insert error", insertError)
+      const msg = String(insertError.message || "")
+      return { ok: false as const, error: msg || "User insert failed", status: 500 as const }
+    }
+
+    return { ok: true as const, userId: sessionUserId, supabase }
+  }
+
+  return { ok: false as const, error: "Unauthorized", status: 401 as const }
+}
+
+export async function GET() {
+  const session = await auth()
+
+  const resolved = await resolveStableUserId(session)
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.error }, { status: resolved.status ?? 401 })
+  }
+
+  const { supabase, userId } = resolved
 
   const { data, error } = await supabase
     .from("watchlist")
     .select("*")
-    .eq("user_id", session.user.id)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
 
   if (error) {
@@ -42,16 +95,13 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const session = await auth()
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const resolved = await resolveStableUserId(session)
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.error }, { status: resolved.status ?? 401 })
   }
 
-  if (!session.user.email) {
-    return NextResponse.json(
-      { error: "Missing user email in session" },
-      { status: 400 }
-    )
-  }
+  const { supabase, userId } = resolved
 
   const movie = (await req.json()) as WatchlistInsertBody
   const movieId = Number(movie?.id)
@@ -59,36 +109,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid movie id" }, { status: 400 })
   }
 
-  let supabase
-  try {
-    supabase = getSupabaseAdminClient()
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Server misconfigured"
-    return NextResponse.json({ error: message }, { status: 500 })
-  }
-
-  // Ensure the referenced user exists (FK: watchlist.user_id -> users.id).
-  const { error: userUpsertError } = await supabase.from("users").upsert(
-    {
-      id: String(session.user.id),
-      email: session.user.email,
-      name: session.user.name ?? null,
-      image: (session.user as { image?: string | null }).image ?? null,
-    },
-    { onConflict: "id" }
-  )
-
-  if (userUpsertError) {
-    console.error("[watchlist][POST] Supabase user upsert error", userUpsertError)
-    const msg = String(userUpsertError.message || "")
-    return NextResponse.json(
-      { error: msg || "User upsert failed" },
-      { status: 500 }
-    )
-  }
-
   const { error } = await supabase.from("watchlist").insert({
-    user_id: session.user.id,
+    user_id: userId,
     movie_id: movieId,
     movie_title: movie.title ?? "",
     poster_path: movie.poster_path ?? "",
@@ -106,9 +128,13 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   const session = await auth()
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const resolved = await resolveStableUserId(session)
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.error }, { status: resolved.status ?? 401 })
   }
+
+  const { supabase, userId } = resolved
 
   const body = (await req.json()) as { movieId?: number }
   const movieId = Number(body?.movieId)
@@ -116,18 +142,10 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Invalid movie id" }, { status: 400 })
   }
 
-  let supabase
-  try {
-    supabase = getSupabaseAdminClient()
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Server misconfigured"
-    return NextResponse.json({ error: message }, { status: 500 })
-  }
-
   const { error } = await supabase
     .from("watchlist")
     .delete()
-    .eq("user_id", session.user.id)
+    .eq("user_id", userId)
     .eq("movie_id", movieId)
 
   if (error) {

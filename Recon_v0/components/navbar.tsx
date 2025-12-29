@@ -14,6 +14,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useSession, signOut } from "next-auth/react"
+import { clearWatchlistCache } from "@/lib/watchlist"
 
 export function Navbar() {
   const pathname = usePathname()
@@ -93,7 +94,12 @@ export function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      clearWatchlistCache()
+                      signOut()
+                    }}
+                  >
                     <LogOut className="mr-2 size-4" /> Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
