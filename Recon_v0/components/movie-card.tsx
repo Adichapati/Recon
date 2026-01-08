@@ -4,11 +4,9 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Star, Plus, Check } from "lucide-react"
+import { Star, Plus, Check, Bookmark } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { AspectRatio } from "@/components/ui/aspect-ratio"
 import { toast } from "@/hooks/use-toast"
 import type { Movie } from "@/lib/mock-api"
 import { isInWatchlist, toggleWatchlist } from "@/lib/watchlist"
@@ -16,10 +14,12 @@ import { isInWatchlist, toggleWatchlist } from "@/lib/watchlist"
 interface MovieCardProps {
   movie: Movie
   showReason?: boolean
+  variant?: "default" | "large"
 }
 
-export function MovieCard({ movie, showReason = false }: MovieCardProps) {
+export function MovieCard({ movie, showReason = false, variant = "default" }: MovieCardProps) {
   const [isInWatchlistState, setIsInWatchlistState] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
   
   useEffect(() => {
     isInWatchlist(movie.id).then(setIsInWatchlistState)
@@ -38,49 +38,89 @@ export function MovieCard({ movie, showReason = false }: MovieCardProps) {
     })
   }
 
+  const isLarge = variant === "large"
+
   return (
     <Link href={`/movie/${movie.id}`}>
-      <Card className="group relative overflow-hidden border-0 bg-card transition-all hover:scale-105 hover:shadow-xl">
-        <AspectRatio ratio={2 / 3}>
+      <Card 
+        className={`group relative overflow-hidden border-0 bg-neutral-900/50 transition-all duration-500 ease-out hover:shadow-2xl hover:shadow-black/50 ${
+          isLarge ? "rounded-2xl" : "rounded-xl"
+        }`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{ transform: isHovered ? "scale(1.03)" : "scale(1)" }}
+      >
+        {/* Poster image - uses contain to show full poster without cropping */}
+        <div className={`relative w-full ${isLarge ? "aspect-[2/3]" : "aspect-[2/3]"}`}>
           <Image
             src={movie.poster_path || "/placeholder.svg"}
             alt={movie.title}
             fill
-            className="object-cover"
-            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            sizes={isLarge ? "(max-width: 768px) 50vw, 25vw" : "(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 14vw"}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+          
+          {/* Smooth gradient overlay - always visible at bottom for title */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-90" />
 
+          {/* Bookmark button - top right, smooth fade */}
           <Button
             size="icon"
-            variant={isInWatchlistState ? "default" : "secondary"}
-            className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100"
+            variant="ghost"
+            className={`absolute top-2 right-2 size-8 transition-all duration-300 ease-out ${
+              isInWatchlistState 
+                ? "bg-amber-500/90 text-black opacity-100 hover:bg-amber-400" 
+                : "bg-black/40 text-white opacity-0 group-hover:opacity-100 hover:bg-black/60"
+            }`}
             onClick={handleWatchlistToggle}
           >
-            {isInWatchlistState ? <Check className="size-4" /> : <Plus className="size-4" />}
+            {isInWatchlistState ? <Check className="size-4" /> : <Bookmark className="size-4" />}
             <span className="sr-only">{isInWatchlistState ? "Remove from Watchlist" : "Add to Watchlist"}</span>
           </Button>
-        </AspectRatio>
 
-        <div className="absolute bottom-0 left-0 right-0 translate-y-full p-4 transition-transform group-hover:translate-y-0">
-          <h3 className="mb-2 line-clamp-1 font-semibold text-foreground">{movie.title}</h3>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <Star className="size-4 fill-primary text-primary" />
-              <span className="text-sm font-medium text-foreground">{movie.vote_average.toFixed(1)}</span>
+          {/* Rating badge - top left, always visible */}
+          <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-xs font-semibold text-amber-400 backdrop-blur-sm">
+            <Star className="size-3 fill-amber-400 text-amber-400" />
+            <span>{movie.vote_average.toFixed(1)}</span>
+          </div>
+
+          {/* Bottom content - title always visible, more info on hover */}
+          <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-3">
+            <h3 className={`line-clamp-2 font-semibold text-white transition-all duration-300 ${
+              isLarge ? "text-base mb-1" : "text-sm mb-0.5"
+            }`}>
+              {movie.title}
+            </h3>
+            
+            {/* Additional info - fades in on hover */}
+            <div className={`flex items-center gap-2 text-xs text-white/70 transition-all duration-300 ${
+              isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+            }`}>
+              <span>{new Date(movie.release_date).getFullYear()}</span>
+              {movie.genres.length > 0 && (
+                <>
+                  <span className="text-white/40">•</span>
+                  <span className="line-clamp-1">{movie.genres.slice(0, 2).join(", ")}</span>
+                </>
+              )}
             </div>
-            <span className="text-xs text-muted-foreground">{new Date(movie.release_date).getFullYear()}</span>
+            
+            {showReason && movie.reason && (
+              <div className={`mt-1.5 line-clamp-2 text-xs text-amber-400/90 italic transition-all duration-300 ${
+                isHovered ? "opacity-100" : "opacity-0"
+              }`}>
+                {movie.reason}
+              </div>
+            )}
           </div>
-          <div className="mt-2 flex flex-wrap gap-1">
-            {movie.genres.slice(0, 2).map((genre) => (
-              <Badge key={genre} variant="secondary" className="text-xs">
-                {genre}
-              </Badge>
-            ))}
-          </div>
-          {showReason && movie.reason && (
-            <div className="mt-2 text-xs text-muted-foreground italic" title={movie.reason}>
-              {movie.reason.length > 40 ? movie.reason.substring(0, 40) + "..." : movie.reason}
+
+          {/* Progress bar at bottom - for watchlist items */}
+          {isInWatchlistState && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-neutral-800/80">
+              <div 
+                className="h-full bg-gradient-to-r from-amber-500 to-amber-400"
+                style={{ width: `${Math.floor(Math.random() * 70) + 20}%` }}
+              />
             </div>
           )}
         </div>

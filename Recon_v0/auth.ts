@@ -1,7 +1,9 @@
 import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
+import CredentialsProvider from "next-auth/providers/credentials"
 
 import { getSupabaseAdminClient } from "@/lib/supabase"
+import { verifyPassword, type PasswordRecord } from "@/lib/password"
 
 export const { handlers, auth } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
@@ -17,6 +19,67 @@ export const { handlers, auth } = NextAuth({
         params: {
           scope: "openid email profile",
         },
+      },
+    }),
+    CredentialsProvider({
+      name: "Email and Password",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const email = typeof credentials?.email === "string" ? credentials.email.trim().toLowerCase() : ""
+        const password = typeof credentials?.password === "string" ? credentials.password : ""
+
+        if (!email || !password) return null
+
+        const supabase = getSupabaseAdminClient()
+
+        // Look up the user by email.
+        const { data: userRow, error: userErr } = await supabase
+          .from("users")
+          .select("id,email,name,image")
+          .eq("email", email)
+          .maybeSingle()
+
+        if (userErr) {
+          console.error("[auth][credentials] Supabase user lookup failed", userErr)
+          return null
+        }
+        if (!userRow?.id || !userRow.email) return null
+
+        // Credentials live in a separate table.
+        const { data: credRow, error: credErr } = await supabase
+          .from("user_credentials")
+          .select("algo,params,salt_b64,hash_b64")
+          .eq("user_id", String(userRow.id))
+          .maybeSingle()
+
+        if (credErr) {
+          console.error("[auth][credentials] Supabase credentials lookup failed", credErr)
+          return null
+        }
+
+        const record: PasswordRecord | null = credRow
+          ? {
+              algo: credRow.algo,
+              params: credRow.params,
+              saltB64: credRow.salt_b64,
+              hashB64: credRow.hash_b64,
+            }
+          : null
+
+        if (!record) return null
+
+        const ok = await verifyPassword(password, record)
+        if (!ok) return null
+
+        return {
+          id: String(userRow.id),
+          email: String(userRow.email),
+          name: (userRow as any)?.name ?? null,
+          image: (userRow as any)?.image ?? null,
+        }
       },
     }),
   ],

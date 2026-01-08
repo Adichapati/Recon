@@ -1,6 +1,13 @@
 import "server-only"
 
+type TmdbGenre = { id: number; name: string }
+type TmdbGenreListResponse = { genres?: TmdbGenre[] }
+
 const TMDB_BASE_URL = "https://api.themoviedb.org/3"
+
+// Simple in-memory cache for the genre list.
+// This avoids re-fetching the same static genre catalog on every request in a warm runtime.
+let cachedMovieGenreMap: { value: Map<number, string>; expiresAt: number } | null = null
 
 export function hasTmdbApiKey() {
   return !!process.env.TMDB_API_KEY
@@ -49,4 +56,35 @@ export async function tmdbFetchJson<T>(
   }
 
   return json as T
+}
+
+export async function getTmdbMovieGenreMap(): Promise<Map<number, string>> {
+  // TMDB list endpoints return `genre_ids: number[]`.
+  // We map those IDs to readable names by fetching the canonical genre list.
+  const now = Date.now()
+  if (cachedMovieGenreMap && cachedMovieGenreMap.expiresAt > now) {
+    return cachedMovieGenreMap.value
+  }
+
+  try {
+    const data = await tmdbFetchJson<TmdbGenreListResponse>("/genre/movie/list", {
+      language: "en-US",
+    })
+
+    const genres = Array.isArray(data?.genres) ? data.genres : []
+    const map = new Map<number, string>(
+      genres
+        .filter((g) => g && typeof g.id === "number" && typeof g.name === "string")
+        .map((g) => [g.id, g.name])
+    )
+
+    // Cache for 24h; TMDB genres rarely change.
+    cachedMovieGenreMap = { value: map, expiresAt: now + 24 * 60 * 60 * 1000 }
+    return map
+  } catch {
+    // Production-safe fallback: if the genre list fails, don't break list endpoints.
+    const empty = new Map<number, string>()
+    cachedMovieGenreMap = { value: empty, expiresAt: now + 5 * 60 * 1000 }
+    return empty
+  }
 }

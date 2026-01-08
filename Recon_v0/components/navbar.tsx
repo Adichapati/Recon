@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useState } from "react"
 import { Film, Search, User, Menu, LogOut, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,10 +19,19 @@ import { clearWatchlistCache } from "@/lib/watchlist"
 
 export function Navbar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { data: session } = useSession()
+  const [searchQuery, setSearchQuery] = useState("")
 
   const isAuthenticated = !!session
   const user = session?.user
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+    }
+  }
 
   const navLinks = isAuthenticated
     ? [
@@ -34,7 +44,7 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           <Link href={isAuthenticated ? "/home" : "/"} className="flex items-center gap-2">
             <Film className="size-8 text-primary" />
             <span className="text-xl font-bold">Recon</span>
@@ -56,15 +66,25 @@ export function Navbar() {
           )}
         </div>
 
+        {/* Centered search bar (streaming-app style) */}
+        {isAuthenticated && (
+          <form onSubmit={handleSearch} className="hidden flex-1 justify-center md:flex">
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <input
+                type="text"
+                placeholder="What do you want to watch?"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-full border border-border bg-muted/50 py-2 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </form>
+        )}
+
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <>
-              <Link href="/search" className="hidden md:block">
-                <Button variant="ghost" size="icon">
-                  <Search className="size-5" />
-                </Button>
-              </Link>
-
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">

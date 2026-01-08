@@ -14,9 +14,10 @@ import { ErrorState } from "@/components/error-state"
 import { mockApi, type Movie } from "@/lib/mock-api"
 import { toast } from "@/hooks/use-toast"
 import { isInWatchlist, toggleWatchlist } from "@/lib/watchlist"
+import { extractGenreNames } from "@/lib/genres"
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500"
-const TMDB_BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/w1280"
+const TMDB_BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/original"
 
 function toTmdbUrl(path: unknown, kind: "poster" | "backdrop") {
   if (!path || typeof path !== "string") return ""
@@ -73,9 +74,8 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
           typeof raw?.vote_average === "number"
             ? raw.vote_average
             : Number(raw?.vote_average ?? 0) || 0,
-        genres: Array.isArray(raw?.genres)
-          ? raw.genres.map((g: any) => String(g)).filter(Boolean)
-          : [],
+        // TMDB details returns `genres: [{ id, name }]`. If we `String(g)` we get "[object Object]".
+        genres: extractGenreNames(raw?.genres),
       }
 
       if (!Number.isFinite(normalized.id)) {
@@ -122,7 +122,7 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
           backdrop_path: toTmdbUrl(m.backdrop_path, "backdrop"),
           release_date: String(m.release_date ?? "1970-01-01"),
           vote_average: typeof m.vote_average === "number" ? m.vote_average : Number(m.vote_average ?? 0) || 0,
-          genres: Array.isArray(m.genres) ? m.genres.map((g: any) => String(g)).filter(Boolean) : [],
+          genres: extractGenreNames(m.genres),
         }))
         .filter((m) => Number.isFinite(m.id))
       
@@ -192,64 +192,76 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
   return (
     <ProtectedLayout>
       <div className="min-h-screen">
-        <div className="relative aspect-video w-full overflow-hidden">
-          <Image
-            src={movie.backdrop_path || "/placeholder.svg"}
-            alt={movie.title}
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        {/* Full-bleed (100vw) cinematic hero like the home banner */}
+        <section className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 overflow-hidden">
+          <div className="relative aspect-video w-full max-h-[600px]">
+            <Image
+              src={movie.backdrop_path || "/placeholder.svg"}
+              alt={movie.title}
+              fill
+              className="object-cover object-top"
+              priority
+              quality={100}
+              unoptimized
+            />
+            {/* Smooth cinematic overlays */}
+            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
 
-          <div className="absolute bottom-0 left-0 right-0">
-            <div className="container mx-auto px-4 pb-8">
-              <div className="flex flex-col gap-6 md:flex-row md:items-end">
-                <div className="relative aspect-[2/3] w-48 shrink-0 overflow-hidden rounded-lg shadow-2xl">
-                  <Image
-                    src={movie.poster_path || "/placeholder.svg"}
-                    alt={movie.title}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-
-                <div className="flex-1">
-                  <h1 className="mb-4 text-4xl font-bold text-foreground md:text-5xl">{movie.title}</h1>
-
-                  <div className="mb-4 flex flex-wrap items-center gap-4 text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Star className="size-5 fill-primary text-primary" aria-hidden="true" />
-                      <span className="text-lg font-semibold text-foreground">{ratingText}</span>
-                      <span className="text-sm">/10</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="size-4" aria-hidden="true" />
-                      <span>{releaseYear}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="size-4" aria-hidden="true" />
-                      <span>2h 15m</span>
-                    </div>
+            <div className="absolute inset-0 flex items-end">
+              <div className="container mx-auto w-full px-6 pb-10 md:px-8">
+                <div className="flex flex-col gap-6 md:flex-row md:items-end">
+                  <div className="relative aspect-[2/3] w-44 shrink-0 overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10 md:w-52">
+                    <Image src={movie.poster_path || "/placeholder.svg"} alt={movie.title} fill className="object-cover" quality={90} />
                   </div>
 
-                  <div className="mb-6 flex flex-wrap gap-2">
-                    {(movie.genres ?? []).map((genre) => (
-                      <Badge key={genre} variant="secondary">
-                        {genre}
-                      </Badge>
-                    ))}
-                  </div>
+                  <div className="flex-1">
+                    <h1 className="mb-4 text-4xl font-bold text-white drop-shadow-lg md:text-5xl">{movie.title}</h1>
 
-                  <Button size="lg" onClick={handleWatchlistToggle} aria-label={`${isInWatchlistState ? "Remove" : "Add"} ${movie.title} to watchlist`}>
-                    {isInWatchlistState ? <Check className="mr-2 size-5" aria-hidden="true" /> : <Plus className="mr-2 size-5" aria-hidden="true" />}
-                    {isInWatchlistState ? "Remove from Watchlist" : "Add to Watchlist"}
-                  </Button>
+                    <div className="mb-4 flex flex-wrap items-center gap-4 text-white/80">
+                      <div className="flex items-center gap-1">
+                        <Star className="size-5 fill-amber-400 text-amber-400" aria-hidden="true" />
+                        <span className="text-lg font-semibold text-white">{ratingText}</span>
+                        <span className="text-sm text-white/60">/10</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="size-4" aria-hidden="true" />
+                        <span>{releaseYear}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="size-4" aria-hidden="true" />
+                        <span>2h 15m</span>
+                      </div>
+                    </div>
+
+                    <div className="mb-6 flex flex-wrap gap-2">
+                      {(movie.genres ?? []).map((genre) => (
+                        <Badge key={genre} variant="secondary">
+                          {genre}
+                        </Badge>
+                      ))}
+                    </div>
+
+                    <Button
+                      size="lg"
+                      onClick={handleWatchlistToggle}
+                      aria-label={`${isInWatchlistState ? "Remove" : "Add"} ${movie.title} to watchlist`}
+                    >
+                      {isInWatchlistState ? (
+                        <Check className="mr-2 size-5" aria-hidden="true" />
+                      ) : (
+                        <Plus className="mr-2 size-5" aria-hidden="true" />
+                      )}
+                      {isInWatchlistState ? "Remove from Watchlist" : "Add to Watchlist"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <div className="container mx-auto px-4 py-12">
           <div className="mb-12">
@@ -262,7 +274,7 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
           <section className="mt-12">
             <h2 className="mb-6 text-2xl font-bold text-foreground">Recommended for You</h2>
             {isLoadingRecommended ? (
-              <MovieGridSkeleton count={6} />
+              <MovieGridSkeleton count={14} />
             ) : recommendedError ? (
               <ErrorState
                 title="Failed to load recommendations"
@@ -271,7 +283,7 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
                 className="py-8"
               />
             ) : recommended.length > 0 ? (
-              <MovieGrid movies={recommended} className="grid-cols-2 sm:grid-cols-3 md:grid-cols-4" showReason={true} />
+              <MovieGrid movies={recommended} showReason={true} />
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <p className="mb-2 text-muted-foreground">No recommendations found</p>

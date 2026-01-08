@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
-import { hasTmdbApiKey, tmdbFetchJson } from "@/lib/tmdb-server"
+import { hasTmdbApiKey, tmdbFetchJson, getTmdbMovieGenreMap } from "@/lib/tmdb-server"
+import { extractGenreNames, mapGenreIdsToNames } from "@/lib/genres"
 
 export const runtime = "nodejs"
 
@@ -9,7 +10,19 @@ export async function GET() {
       language: "en-US",
     })
 
-    return NextResponse.json(data, {
+    // TMDB list endpoints use `genre_ids`; attach a resolved `genres` array for the UI.
+    const genreMap = await getTmdbMovieGenreMap()
+    const results = Array.isArray(data?.results)
+      ? data.results.map((m: any) => {
+          const explicit = extractGenreNames(m?.genres)
+          const resolved = explicit.length > 0 ? explicit : mapGenreIdsToNames(m?.genre_ids, genreMap)
+          return { ...m, genres: resolved }
+        })
+      : data?.results
+
+    const enriched = { ...data, results }
+
+    return NextResponse.json(enriched, {
       headers: {
         "x-tmdb-key-present": "1",
       },

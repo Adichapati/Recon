@@ -15,6 +15,7 @@ import { clearWatchlistCache, getWatchlist } from "@/lib/watchlist"
 import type { WatchlistItem } from "@/lib/watchlist"
 import { Calendar, Film, Mail, Tag } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
+import { extractGenreNames } from "@/lib/genres"
 
 type GenreStats = { name: string; count: number }
 
@@ -50,7 +51,8 @@ async function fetchMovieDetails(movieId: number): Promise<Movie | null> {
       backdrop_path: toTmdbUrl(raw?.backdrop_path, "backdrop"),
       release_date: String(raw?.release_date ?? "1970-01-01"),
       vote_average: typeof raw?.vote_average === "number" ? raw.vote_average : Number(raw?.vote_average ?? 0) || 0,
-      genres: Array.isArray(raw?.genres) ? raw.genres.map((g: any) => String(g)).filter(Boolean) : [],
+      // TMDB details returns `genres: [{ id, name }]`; avoid "[object Object]" by extracting names.
+      genres: extractGenreNames(raw?.genres),
     }
 
     if (!Number.isFinite(normalized.id)) return null
