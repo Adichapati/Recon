@@ -1,5 +1,3 @@
-
-
 "use client"
 
 import Link from "next/link"
@@ -68,74 +66,65 @@ export function Navbar() {
           )}
         </div>
 
+        {/* Centered search bar (streaming-app style) */}
         {isAuthenticated && (
           <form onSubmit={handleSearch} className="hidden flex-1 justify-center md:flex">
             <div className="relative w-full max-w-md">
-              <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <input
                 type="text"
                 placeholder="What do you want to watch?"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-full border border-border bg-muted/50 py-2 pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-full border border-border bg-muted/50 py-2 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           </form>
         )}
 
-        <div className="flex items-center gap-3">
-
+        <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <>
-              {/* ✅ Welcome text */}
-              <div className="hidden items-center gap-3 md:flex">
-                <div className="text-right leading-tight">
-                  <p className="text-xs text-muted-foreground">Welcome</p>
-                  <p className="text-sm font-semibold">{user?.name}</p>
-                </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar className="size-8">
+                      <AvatarImage src={user?.image ?? "/placeholder.svg"} />
+                      <AvatarFallback>
+                        {user?.name?.[0] ?? "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                      <Avatar className="size-8">
-                        <AvatarImage src={user?.image ?? "/placeholder.svg"} />
-                        <AvatarFallback>
-                          {user?.name?.[0] ?? "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="p-2">
+                    <p className="text-sm font-medium">{user?.name}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                      <User className="mr-2 size-4" /> Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/watchlist">
+                      <Heart className="mr-2 size-4" /> Watchlist
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      clearWatchlistCache()
+                      signOut()
+                    }}
+                  >
+                    <LogOut className="mr-2 size-4" /> Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="p-2">
-                      <p className="text-sm font-medium">{user?.name}</p>
-                      <p className="text-xs text-muted-foreground">{user?.email}</p>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile">
-                        <User className="mr-2 size-4" /> Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/watchlist">
-                        <Heart className="mr-2 size-4" /> Watchlist
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => {
-                        clearWatchlistCache()
-                        signOut()
-                      }}
-                    >
-                      <LogOut className="mr-2 size-4" /> Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Mobile menu */}
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="md:hidden">
@@ -168,7 +157,6 @@ export function Navbar() {
               </Link>
             </>
           )}
-
         </div>
       </div>
     </nav>
