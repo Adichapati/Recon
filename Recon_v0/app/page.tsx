@@ -6,11 +6,8 @@ import { Star, TrendingUp, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { MainLayout } from "@/components/layouts/main-layout"
-import { useSession, signIn } from "next-auth/react"
 
 export default function LandingPage() {
-  const { data: session } = useSession()
-
   return (
     <MainLayout>
       <div className="min-h-screen">
@@ -35,45 +32,18 @@ export default function LandingPage() {
                 Discover, track, and enjoy your favorite films with personalized recommendations and a beautiful
                 interface designed for movie lovers.
               </p>
-
-              {/* ✅ AUTH-AWARE HERO CONTENT */}
-              {!session ? (
-                <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                  <Link href="/signup">
-                    <Button size="lg" className="w-full sm:w-auto">
-                      Get Started Free
-                    </Button>
-                  </Link>
-
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="w-full sm:w-auto bg-transparent"
-                    onClick={() => signIn("google")}
-                  >
+              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <Link href="/signup">
+                  <Button size="lg" className="w-full sm:w-auto">
+                    Get Started Free
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent">
                     Sign in with Google
                   </Button>
-                </div>
-              ) : (
-                <div className="mt-4 flex flex-col items-center text-center">
-                  <p className="mb-4 text-lg font-medium tracking-wide text-muted-foreground md:text-xl">
-                    Welcome back 👋
-                  </p>
-
-                  <h2 className="mb-8 text-balance text-4xl font-extrabold leading-tight text-foreground md:text-6xl">
-                    {session.user?.name}
-                  </h2>
-
-                  <Link href="/home">
-                    <Button
-                      size="lg"
-                      className="rounded-full px-10 text-base font-semibold md:text-lg"
-                    >
-                      Go to Home
-                    </Button>
-                  </Link>
-                </div>
-              )}
+                </Link>
+              </div>
             </div>
           </div>
         </section>
@@ -86,7 +56,10 @@ export default function LandingPage() {
             <div className="grid gap-8 md:grid-cols-3">
               <Card className="border-border">
                 <CardContent className="flex flex-col items-center gap-4 p-6 text-center">
-                  <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                  <div
+                    className="flex size-12 items-center justify-center rounded-full bg-primary/10"
+                    aria-hidden="true"
+                  >
                     <Star className="size-6 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold text-foreground">Personalized Recommendations</h3>
@@ -98,7 +71,10 @@ export default function LandingPage() {
 
               <Card className="border-border">
                 <CardContent className="flex flex-col items-center gap-4 p-6 text-center">
-                  <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                  <div
+                    className="flex size-12 items-center justify-center rounded-full bg-primary/10"
+                    aria-hidden="true"
+                  >
                     <TrendingUp className="size-6 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold text-foreground">Track Your Watchlist</h3>
@@ -110,7 +86,10 @@ export default function LandingPage() {
 
               <Card className="border-border">
                 <CardContent className="flex flex-col items-center gap-4 p-6 text-center">
-                  <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                  <div
+                    className="flex size-12 items-center justify-center rounded-full bg-primary/10"
+                    aria-hidden="true"
+                  >
                     <Users className="size-6 text-primary" />
                   </div>
                   <h3 className="text-xl font-semibold text-foreground">Community Reviews</h3>
@@ -137,7 +116,7 @@ export default function LandingPage() {
 
         <footer className="border-t border-border py-8">
           <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-            <p>© 2025 Recon. Built with v0 by Vercel.</p>
+            <p>© 2026 Recon. All rights reserved.</p>
           </div>
         </footer>
       </div>

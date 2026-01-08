@@ -16,7 +16,12 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
     }
   }, [status, router])
 
-  if (status === "loading") return null
+  // While checking session
+  if (status === "loading") {
+    return null
+  }
+
+  // Not logged in → go to login
   if (!session) return null
 
   return (
