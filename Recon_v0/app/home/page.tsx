@@ -34,7 +34,7 @@ export default function HomePage() {
       setPopularMovies(movies)
     } catch (error) {
       setPopularError(true)
-      console.error("[v0] Error fetching popular movies:", error)
+      console.error("Error fetching popular movies:", error)
     } finally {
       setIsLoadingPopular(false)
     }
@@ -48,7 +48,7 @@ export default function HomePage() {
       setTrendingMovies(movies)
     } catch (error) {
       setTrendingError(true)
-      console.error("[v0] Error fetching trending movies:", error)
+      console.error("Error fetching trending movies:", error)
     } finally {
       setIsLoadingTrending(false)
     }

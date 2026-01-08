@@ -29,7 +29,7 @@ export default function SearchPage() {
       setMovies(results)
     } catch (error) {
       setSearchError(true)
-      console.error("[v0] Error searching movies:", error)
+      console.error("Error searching movies:", error)
     } finally {
       setIsLoading(false)
     }

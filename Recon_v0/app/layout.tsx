@@ -12,7 +12,6 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Recon - Your Movie Companion",
   description: "Discover, track, and enjoy your favorite movies with personalized recommendations",
-  generator: "v0.app",
 }
 
 export default function RootLayout({

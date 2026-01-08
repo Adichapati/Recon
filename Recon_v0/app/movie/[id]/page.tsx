@@ -90,7 +90,7 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
         return
       }
       setMovieError(true)
-      console.error("[v0] Error fetching movie details:", error)
+      console.error("Error fetching movie details:", error)
     } finally {
       setIsLoadingMovie(false)
     }
@@ -132,7 +132,7 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
         return
       }
       setRecommendedError(true)
-      console.error("[v0] Error fetching recommendations:", error)
+      console.error("Error fetching recommendations:", error)
     } finally {
       setIsLoadingRecommended(false)
     }

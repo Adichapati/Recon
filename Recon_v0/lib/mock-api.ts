@@ -92,7 +92,7 @@ export async function getPopularMovies(): Promise<Movie[]> {
     if (err && typeof err === "object" && (err as any).tmdbKeyPresent) {
       throw err
     }
-    console.warn("[v0] Falling back to mock popular movies")
+    console.warn("Falling back to mock popular movies")
     return mockApi.getPopular()
   }
 }
@@ -105,7 +105,7 @@ export async function getTrendingMovies(): Promise<Movie[]> {
     if (err && typeof err === "object" && (err as any).tmdbKeyPresent) {
       throw err
     }
-    console.warn("[v0] Falling back to mock trending movies")
+    console.warn("Falling back to mock trending movies")
     return mockApi.getTrending()
   }
 }
@@ -122,7 +122,7 @@ export async function searchMovies(query: string): Promise<Movie[]> {
     if (err && typeof err === "object" && (err as any).tmdbKeyPresent) {
       throw err
     }
-    console.warn("[v0] Falling back to mock search")
+    console.warn("Falling back to mock search")
     return mockApi.search(query)
   }
 }

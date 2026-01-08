@@ -1,42 +1,38 @@
-# Movie recommendation UI
+# Recon - Movie Recommendation App
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+A modern movie discovery and recommendation platform built with Next.js, featuring personalized recommendations, watchlist management, and a cinematic streaming-style UI.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/adithyarajkanayamkott-5244s-projects/v0-movie-recommendation-ui)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/cS00Ml854Ln)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://typescriptlang.org)
 
-## Overview
+## Features
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+- 🎬 Browse popular and trending movies from TMDB
+- 🔍 Search for movies with real-time results
+- 📝 Personal watchlist management
+- 🎯 AI-powered movie recommendations
+- 🔐 Authentication via Google OAuth or email/password
+- 🌙 Dark theme with cinematic UI
+- 📱 Fully responsive design
 
-## Deployment
+## Tech Stack
 
-Your project is live at:
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Authentication**: NextAuth.js with Google OAuth & Credentials
+- **Database**: Supabase (PostgreSQL)
+- **API**: TMDB for movie data
+- **Deployment**: Vercel
 
-**[https://vercel.com/adithyarajkanayamkott-5244s-projects/v0-movie-recommendation-ui](https://vercel.com/adithyarajkanayamkott-5244s-projects/v0-movie-recommendation-ui)**
+## Local Development
 
-## Build your app
+### Frontend (Next.js)
 
-Continue building your app on:
-
-**[https://v0.app/chat/cS00Ml854Ln](https://v0.app/chat/cS00Ml854Ln)**
-
-## How It Works
-
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
-
-## Local development
-
-Frontend (Next.js, TMDB-only — default):
-
-1. Create `Recon_v0/.env.local` using `Recon_v0/.env.example`
-2. Set `TMDB_API_KEY` in `Recon_v0/.env.local`
-3. Make sure `BACKEND_URL` is blank/removed (so Next serves `/api/movies/*` itself)
-4. From `Recon_v0/`:
+1. Clone the repository
+2. Create `.env.local` using `.env.example`
+3. Set `TMDB_API_KEY` in `.env.local`
+4. Make sure `BACKEND_URL` is blank/removed (so Next serves `/api/movies/*` itself)
+5. Install and run:
 	- `npm install`
 	- `npm run dev` (runs on `http://localhost:3000`)
 
