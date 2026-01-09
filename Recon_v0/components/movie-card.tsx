@@ -50,18 +50,18 @@ export function MovieCard({ movie, showReason = false, variant = "default" }: Mo
         onMouseLeave={() => setIsHovered(false)}
         style={{ transform: isHovered ? "scale(1.03)" : "scale(1)" }}
       >
-        {/* Poster image - uses contain to show full poster without cropping */}
-        <div className={`relative w-full ${isLarge ? "aspect-[2/3]" : "aspect-[2/3]"}`}>
+        {/* Poster image container */}
+        <div className="relative w-full aspect-[2/3]">
           <Image
             src={movie.poster_path || "/placeholder.svg"}
             alt={movie.title}
             fill
-            className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
             sizes={isLarge ? "(max-width: 768px) 50vw, 25vw" : "(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 14vw"}
           />
           
           {/* Smooth gradient overlay - always visible at bottom for title */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent opacity-70 transition-opacity duration-300 group-hover:opacity-95" />
 
           {/* Bookmark button - top right, smooth fade */}
           <Button
@@ -85,7 +85,7 @@ export function MovieCard({ movie, showReason = false, variant = "default" }: Mo
           </div>
 
           {/* Bottom content - title always visible, more info on hover */}
-          <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-3">
+          <div className="absolute inset-x-0 bottom-0 p-3 pb-2">
             <h3 className={`line-clamp-2 font-semibold text-white transition-all duration-300 ${
               isLarge ? "text-base mb-1" : "text-sm mb-0.5"
             }`}>
@@ -96,8 +96,8 @@ export function MovieCard({ movie, showReason = false, variant = "default" }: Mo
             <div className={`flex items-center gap-2 text-xs text-white/70 transition-all duration-300 ${
               isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
             }`}>
-              <span>{new Date(movie.release_date).getFullYear()}</span>
-              {movie.genres.length > 0 && (
+              <span>{movie.release_date ? new Date(movie.release_date).getFullYear() || "—" : "—"}</span>
+              {movie.genres && movie.genres.length > 0 && (
                 <>
                   <span className="text-white/40">•</span>
                   <span className="line-clamp-1">{movie.genres.slice(0, 2).join(", ")}</span>
