@@ -67,7 +67,9 @@ async function resolveStableUserId(session: Session | null) {
   return { ok: false as const, error: "Unauthorized", status: 401 as const }
 }
 
-export async function GET() {
+const VALID_STATUSES = new Set(["watchlist", "completed"])
+
+export async function GET(req: Request) {
   const session = await auth()
 
   const resolved = await resolveStableUserId(session)
@@ -77,11 +79,20 @@ export async function GET() {
 
   const { supabase, userId } = resolved
 
-  const { data, error } = await supabase
+  const { searchParams } = new URL(req.url)
+  const statusFilter = searchParams.get("status")
+
+  let query = supabase
     .from("watchlist")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
+
+  if (statusFilter && VALID_STATUSES.has(statusFilter)) {
+    query = query.eq("status", statusFilter)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     console.error("[watchlist][GET] Supabase error", error)
@@ -114,6 +125,7 @@ export async function POST(req: Request) {
     movie_id: movieId,
     movie_title: movie.title ?? "",
     poster_path: movie.poster_path ?? "",
+    status: "watchlist",
   })
 
   if (error) {
@@ -121,6 +133,43 @@ export async function POST(req: Request) {
     const msg = String(error.message || "")
     const status = /row-level security|permission denied/i.test(msg) ? 403 : 500
     return NextResponse.json({ error: msg || "Watchlist insert failed" }, { status })
+  }
+
+  return NextResponse.json({ success: true })
+}
+
+export async function PATCH(req: Request) {
+  const session = await auth()
+
+  const resolved = await resolveStableUserId(session)
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.error }, { status: resolved.status ?? 401 })
+  }
+
+  const { supabase, userId } = resolved
+
+  const body = (await req.json()) as { movieId?: number; status?: string }
+  const movieId = Number(body?.movieId)
+  if (!Number.isFinite(movieId)) {
+    return NextResponse.json({ error: "Invalid movie id" }, { status: 400 })
+  }
+
+  const newStatus = body?.status
+  if (typeof newStatus !== "string" || !VALID_STATUSES.has(newStatus)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 })
+  }
+
+  const { error } = await supabase
+    .from("watchlist")
+    .update({ status: newStatus })
+    .eq("user_id", userId)
+    .eq("movie_id", movieId)
+
+  if (error) {
+    console.error("[watchlist][PATCH] Supabase error", error)
+    const msg = String(error.message || "")
+    const status = /row-level security|permission denied/i.test(msg) ? 403 : 500
+    return NextResponse.json({ error: msg || "Status update failed" }, { status })
   }
 
   return NextResponse.json({ success: true })

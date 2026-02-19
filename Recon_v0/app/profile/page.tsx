@@ -13,7 +13,7 @@ import { toast } from "@/hooks/use-toast"
 import type { Movie } from "@/lib/mock-api"
 import { clearWatchlistCache, getWatchlist } from "@/lib/watchlist"
 import type { WatchlistItem } from "@/lib/watchlist"
-import { Calendar, Film, Mail, Tag } from "lucide-react"
+import { BarChart3, Calendar, Eye, Film, Mail, Tag } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
 import { extractGenreNames } from "@/lib/genres"
 
@@ -85,6 +85,11 @@ export default function ProfilePage() {
   const [topGenres, setTopGenres] = useState<GenreStats[]>([])
   const [isLoadingWatchlist, setIsLoadingWatchlist] = useState(true)
 
+  // Viewing Insights state
+  const [completedCount, setCompletedCount] = useState(0)
+  const [completedTopGenres, setCompletedTopGenres] = useState<GenreStats[]>([])
+  const [isLoadingInsights, setIsLoadingInsights] = useState(true)
+
   useEffect(() => {
     let cancelled = false
 
@@ -118,6 +123,43 @@ export default function ProfilePage() {
           .map(([name, count]) => ({ name, count }))
 
         setTopGenres(stats)
+
+        // --- Viewing Insights: fetch completed movies & derive genres ---
+        try {
+          setIsLoadingInsights(true)
+          const completed = await getWatchlist(true, "completed")
+          if (cancelled) return
+
+          setCompletedCount(completed.length)
+
+          const completedSample = completed.slice(0, 20)
+          const completedDetails = await mapWithConcurrency(
+            completedSample,
+            4,
+            async (it) => fetchMovieDetails(it.id)
+          )
+          if (cancelled) return
+
+          const cCounts = new Map<string, number>()
+          for (const m of completedDetails) {
+            for (const g of m?.genres ?? []) {
+              const name = typeof g === "string" ? g.trim() : ""
+              if (!name) continue
+              cCounts.set(name, (cCounts.get(name) ?? 0) + 1)
+            }
+          }
+
+          const cStats = [...cCounts.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([name, count]) => ({ name, count }))
+
+          setCompletedTopGenres(cStats)
+        } catch (err) {
+          console.error("[Profile] Failed to load viewing insights", err)
+        } finally {
+          if (!cancelled) setIsLoadingInsights(false)
+        }
       } catch (error) {
         console.error("[Profile] Failed to load watchlist", error)
         toast({
@@ -145,6 +187,17 @@ export default function ProfilePage() {
       })
       .slice(0, 5)
   }, [watchlistItems])
+
+  // Adaptive weighting — mirrors the formula used in recommendation routes.
+  // quizWeight = max(0.30, 1 − n / (n + 10))
+  const quizWeight = useMemo(() => {
+    const FLOOR = 0.30
+    const K = 10
+    return Math.max(FLOOR, 1 - completedCount / (completedCount + K))
+  }, [completedCount])
+  const completedWeight = 1 - quizWeight
+  const quizPct = Math.round(quizWeight * 100)
+  const completedPct = Math.round(completedWeight * 100)
 
   const user = session?.user
 
@@ -208,10 +261,10 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex items-center gap-3 rounded-lg border p-4">
-                  <Calendar className="size-5 text-primary" />
+                  <Eye className="size-5 text-primary" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Recently Added</p>
-                    <p className="font-medium">{recentItems.length}</p>
+                    <p className="text-sm text-muted-foreground">Completed</p>
+                    <p className="font-medium">{completedCount}</p>
                   </div>
                 </div>
               </div>
@@ -231,6 +284,75 @@ export default function ProfilePage() {
                         {g.name}
                       </Badge>
                     ))}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* ── Your Viewing Insights ────────────────────────── */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="size-5 text-primary" />
+                  <h3 className="text-lg font-semibold">Your Viewing Insights</h3>
+                </div>
+
+                {isLoadingInsights ? (
+                  <p className="text-sm text-muted-foreground">Analyzing your viewing history…</p>
+                ) : completedCount === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Mark movies as watched to unlock personalised insights.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Completed genres */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">Top Genres You Watch</p>
+                      {completedTopGenres.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {completedTopGenres.map((g) => (
+                            <Badge key={g.name} variant="outline">
+                              {g.name} ({g.count})
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Not enough data yet.</p>
+                      )}
+                    </div>
+
+                    {/* Weight comparison */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">Recommendation Influence</p>
+                      <div className="flex gap-2">
+                        <div className="flex-1 rounded-lg border p-3">
+                          <p className="text-xs text-muted-foreground">Quiz Preferences</p>
+                          <p className="text-xl font-semibold">{quizPct}%</p>
+                        </div>
+                        <div className="flex-1 rounded-lg border p-3">
+                          <p className="text-xs text-muted-foreground">Watch History</p>
+                          <p className="text-xl font-semibold">{completedPct}%</p>
+                        </div>
+                      </div>
+                      {/* Visual weight bar */}
+                      <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="bg-primary transition-all duration-500"
+                          style={{ width: `${quizPct}%` }}
+                        />
+                        <div
+                          className="bg-primary/50 transition-all duration-500"
+                          style={{ width: `${completedPct}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Insight message */}
+                    <p className="text-sm italic text-muted-foreground">
+                      {completedWeight > quizWeight
+                        ? "Your recommendations are now mostly driven by what you watch."
+                        : "Your initial preferences still guide your recommendations."}
+                    </p>
                   </div>
                 )}
               </div>

@@ -30,6 +30,7 @@ type WatchlistRow = {
   movie_id: number
   created_at?: string
   movie_title?: string | null
+  status?: string
 }
 
 const ANALYZE_WATCHLIST_LIMIT = 25
@@ -181,19 +182,22 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ ...base, results: baseResults })
   }
 
-  // Fetch watchlist for this user.
+  // Fetch watchlist AND completed movies for this user.
   let watchlistRows: WatchlistRow[] = []
+  let completedRows: WatchlistRow[] = []
   try {
     const supabase = getSupabaseAdminClient()
     const { data, error } = await supabase
       .from("watchlist")
-      .select("movie_id, created_at, movie_title")
+      .select("movie_id, created_at, movie_title, status")
       .eq("user_id", session.user.id)
       .order("created_at", { ascending: false })
-      .limit(ANALYZE_WATCHLIST_LIMIT)
+      .limit(ANALYZE_WATCHLIST_LIMIT * 2)
 
     if (error) throw error
-    watchlistRows = (data ?? []) as WatchlistRow[]
+    const allRows = (data ?? []) as WatchlistRow[]
+    watchlistRows = allRows.filter((r) => r.status !== "completed")
+    completedRows = allRows.filter((r) => r.status === "completed")
   } catch (e) {
     // If Supabase is misconfigured, don't break recommendations.
     // Return base recommendations (still valid for unauth-like behavior).
@@ -201,11 +205,14 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ ...base, results: baseResults, warning: "Personalization unavailable" })
   }
 
-  if (watchlistRows.length === 0) {
+  if (watchlistRows.length === 0 && completedRows.length === 0) {
     return NextResponse.json({ ...base, results: baseResults })
   }
 
   const watchlistIds = new Set(watchlistRows.map((r) => Number(r.movie_id)).filter(Number.isFinite))
+  const completedIds = new Set(completedRows.map((r) => Number(r.movie_id)).filter(Number.isFinite))
+  // Exclude both watchlist and completed movies from results
+  const excludeIds = new Set([...watchlistIds, ...completedIds])
 
   // Fetch details for watchlist movies (genres), prioritizing the most recent.
   // Use TMDB directly so this works without Flask.
@@ -228,22 +235,68 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     }
   )
 
+  // Fetch details for completed movies — these are stronger positive signals.
+  const completedDetails = await mapWithConcurrency(
+    completedRows.slice(0, ANALYZE_WATCHLIST_LIMIT),
+    4,
+    async (row) => {
+      try {
+        const d = await tmdbFetchJson<any>(`/movie/${encodeURIComponent(String(row.movie_id))}`, {
+          language: "en-US",
+        })
+        return {
+          id: d?.id,
+          title: d?.title,
+          genres: safeArray(d?.genres).map((g: any) => String(g?.name ?? "")).filter(Boolean),
+        }
+      } catch {
+        return { id: row.movie_id, title: row.movie_title ?? undefined, genres: [] }
+      }
+    }
+  )
+
   const recentDetails = watchlistDetails.slice(0, RECENT_LIMIT)
 
   const genreCounts = buildGenreCounts(watchlistDetails)
+  // Merge completed-movie genres into overall genre profile (no manual
+  // double-counting — the adaptive weighting below controls emphasis).
+  const completedGenreCounts = buildGenreCounts(completedDetails)
+  for (const [g, count] of completedGenreCounts) {
+    genreCounts.set(g, (genreCounts.get(g) ?? 0) + count)
+  }
   const top = topGenres(genreCounts, TOP_GENRES_LIMIT)
   const maxGenreCount = top[0]?.count ?? 1
 
   const topGenreSet = new Set(top.map((g) => g.genre))
   const recentSets = recentDetails.map((m) => new Set(safeArray<string>(m.genres).map(normalizeGenre).filter(Boolean) as string[]))
+  const completedSets = completedDetails.map((m) => new Set(safeArray<string>(m.genres).map(normalizeGenre).filter(Boolean) as string[]))
+
+  // ──────────────────────────────────────────────────────────────────
+  // Adaptive weighting: quiz/watchlist influence decays as the user
+  // completes more movies. Completed movies are a stronger signal of
+  // actual taste than items merely saved to watchlist.
+  //
+  //   quizWeight     = max(FLOOR, 1 − n / (n + K))
+  //   completedWeight = 1 − quizWeight
+  //
+  // K = 10   → at 10 completed movies, both signals are equally weighted
+  // FLOOR = 0.30 → quiz/watchlist influence never drops below 30%
+  // ──────────────────────────────────────────────────────────────────
+  const QUIZ_FLOOR = 0.30
+  const DECAY_K = 10
+  const completedCount = completedDetails.length
+  const rawQuizWeight = 1 - completedCount / (completedCount + DECAY_K)
+  const quizWeight = Math.max(QUIZ_FLOOR, rawQuizWeight)
+  const completedWeight = 1 - quizWeight
 
   // Re-rank base results with deterministic boosts.
-  // - Genre boost: favors movies matching the user's frequent watchlist genres
+  // - Genre boost: favors movies matching the user's frequent watchlist/completed genres
   // - Recent similarity: favors movies whose genres overlap with recently added movies
-  // Also, remove movies already in the watchlist.
+  // - Completed similarity: favors movies whose genres overlap with watched movies (stronger signal)
+  // Also, remove movies already in the watchlist or completed.
   const reranked = baseResults
     .map((m, idx) => ({ m, idx }))
-    .filter(({ m }) => !watchlistIds.has(Number(m.id)))
+    .filter(({ m }) => !excludeIds.has(Number(m.id)))
     .map(({ m, idx }) => {
       const genres = safeArray<string>(m.genres).map(normalizeGenre).filter(Boolean) as string[]
       const genreSet = new Set(genres)
@@ -264,12 +317,24 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         recentBoost = Math.max(recentBoost, jaccard(genreSet, rs))
       }
 
+      // Completed similarity boost (max Jaccard overlap with any completed movie)
+      let completedBoost = 0
+      for (const cs of completedSets) {
+        completedBoost = Math.max(completedBoost, jaccard(genreSet, cs))
+      }
+
       // Preserve TMDB ordering as the primary signal.
+      // Adaptive weighting scales quiz-derived coefficients (genre, recent)
+      // down and completed-derived coefficient up as completedCount grows.
       const baseRankScore = (baseResults.length - idx) / Math.max(1, baseResults.length)
-      const finalScore = baseRankScore + 0.15 * genreBoost + 0.15 * recentBoost
+      const finalScore = baseRankScore
+        + quizWeight * 0.15 * genreBoost
+        + quizWeight * 0.10 * recentBoost
+        + completedWeight * 0.25 * completedBoost
 
       const reasonBits: string[] = []
-      if (genreBoost > 0.05) reasonBits.push("Matches your watchlist genres")
+      if (completedBoost > 0.15) reasonBits.push("Similar to movies you've watched")
+      if (genreBoost > 0.05) reasonBits.push("Matches your favorite genres")
       if (recentBoost > 0.15) reasonBits.push("Similar to your recently added movies")
 
       return {
@@ -287,6 +352,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     personalization: {
       top_genres: top.map((g) => g.genre),
       recent_count: recentDetails.length,
+      completed_count: completedCount,
+      quiz_weight: Math.round(quizWeight * 100) / 100,
+      completed_weight: Math.round(completedWeight * 100) / 100,
     },
   })
 }

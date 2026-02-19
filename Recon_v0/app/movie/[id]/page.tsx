@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from "react"
 import Image from "next/image"
-import { Star, Clock, Calendar, Plus, Check } from "lucide-react"
+import { Star, Clock, Calendar, Plus, Check, Eye } from "lucide-react"
 import { ProtectedLayout } from "@/components/protected-layout"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,7 +13,7 @@ import { MovieDetailsSkeleton } from "@/components/movie-details-skeleton"
 import { ErrorState } from "@/components/error-state"
 import { mockApi, type Movie } from "@/lib/mock-api"
 import { toast } from "@/hooks/use-toast"
-import { isInWatchlist, toggleWatchlist } from "@/lib/watchlist"
+import { isInWatchlist, toggleWatchlist, markAsCompleted } from "@/lib/watchlist"
 import { extractGenreNames } from "@/lib/genres"
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500"
@@ -244,18 +244,47 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
                       ))}
                     </div>
 
-                    <Button
-                      size="lg"
-                      onClick={handleWatchlistToggle}
-                      aria-label={`${isInWatchlistState ? "Remove" : "Add"} ${movie.title} to watchlist`}
-                    >
-                      {isInWatchlistState ? (
-                        <Check className="mr-2 size-5" aria-hidden="true" />
-                      ) : (
-                        <Plus className="mr-2 size-5" aria-hidden="true" />
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        size="lg"
+                        onClick={handleWatchlistToggle}
+                        aria-label={`${isInWatchlistState ? "Remove" : "Add"} ${movie.title} to watchlist`}
+                      >
+                        {isInWatchlistState ? (
+                          <Check className="mr-2 size-5" aria-hidden="true" />
+                        ) : (
+                          <Plus className="mr-2 size-5" aria-hidden="true" />
+                        )}
+                        {isInWatchlistState ? "Remove from Watchlist" : "Add to Watchlist"}
+                      </Button>
+                      {isInWatchlistState && (
+                        <Button
+                          size="lg"
+                          variant="secondary"
+                          onClick={() => {
+                            markAsCompleted(movie.id).then((ok) => {
+                              if (ok) {
+                                setIsInWatchlistState(false)
+                                toast({
+                                  title: "Marked as watched",
+                                  description: `${movie.title} moved to your completed list.`,
+                                })
+                              } else {
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to mark movie as watched.",
+                                  variant: "destructive",
+                                })
+                              }
+                            })
+                          }}
+                          aria-label={`Mark ${movie.title} as watched`}
+                        >
+                          <Eye className="mr-2 size-5" aria-hidden="true" />
+                          Mark as Watched
+                        </Button>
                       )}
-                      {isInWatchlistState ? "Remove from Watchlist" : "Add to Watchlist"}
-                    </Button>
+                    </div>
                   </div>
                 </div>
               </div>

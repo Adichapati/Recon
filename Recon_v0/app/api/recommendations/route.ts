@@ -160,79 +160,188 @@ export async function GET() {
       console.error("[recommendations] Failed to fetch preferences:", prefsError)
     }
 
-    // Fetch user watchlist for overlap detection
+    // Fetch user watchlist + completed movies for overlap detection and boosting
     const { data: watchlist } = await supabase
       .from("watchlist")
-      .select("id, title")
+      .select("movie_id, movie_title, status")
       .eq("user_id", userId)
 
-    const watchlistIds = new Set((watchlist || []).map((w: any) => w.id))
-    const watchlistTitles = new Map((watchlist || []).map((w: any) => [w.id, w.title]))
+    const allWatchlistRows = watchlist || []
+    const watchlistIds = new Set(allWatchlistRows.map((w: any) => Number(w.movie_id)))
+    const completedIds = new Set(
+      allWatchlistRows.filter((w: any) => w.status === "completed").map((w: any) => Number(w.movie_id))
+    )
+    const completedTitles = new Map(
+      allWatchlistRows.filter((w: any) => w.status === "completed").map((w: any) => [Number(w.movie_id), w.movie_title])
+    )
 
-    // If no preferences or not completed, fall back to popular movies
+    // Use completed movies to enrich genre preferences
+    let completedGenreIds: number[] = []
+    if (completedIds.size > 0) {
+      const genreMap = await getTmdbMovieGenreMap()
+      const movieDetailsPromises = Array.from(completedIds).slice(0, 15).map(async (movieId) => {
+        try {
+          const d = await tmdbFetchJson<any>(`/movie/${movieId}`, { language: "en-US" })
+          return extractGenreNames(d?.genres)
+        } catch {
+          return []
+        }
+      })
+      const completedGenreArrays = await Promise.all(movieDetailsPromises)
+      const completedGenreNames = new Set(completedGenreArrays.flat())
+      completedGenreIds = Array.from(completedGenreNames)
+        .map((name) => GENRE_NAME_TO_ID[name])
+        .filter((id): id is number => typeof id === "number")
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Adaptive weighting: quiz preferences decay as the number of
+    // completed movies grows. Completed movies are an explicit
+    // positive signal of actual taste.
+    //
+    //   quizWeight     = max(FLOOR, 1 − n / (n + K))
+    //   completedWeight = 1 − quizWeight
+    //
+    // K = 10   → equal weight at 10 completed movies
+    // FLOOR = 0.30 → quiz never drops below 30%
+    // ────────────────────────────────────────────────────────────────
+    const QUIZ_FLOOR = 0.30
+    const DECAY_K = 10
+    const completedCount = completedIds.size
+    const rawQuizWeight = 1 - completedCount / (completedCount + DECAY_K)
+    const quizWeight = Math.max(QUIZ_FLOOR, rawQuizWeight)
+    const completedWeight = 1 - quizWeight
+
+    // If no preferences or not completed, try completed-movie genres before falling back
     if (!prefs?.completed || !prefs?.genres || prefs.genres.length === 0) {
+      if (completedGenreIds.length > 0) {
+        // Use completed movie genres as a preference signal
+        const movies = await fetchDiscoverMovies(completedGenreIds)
+        const moviesWithReasons = movies
+          .filter((m: any) => !completedIds.has(Number(m.id)))
+          .map((m: any) => ({
+            ...m,
+            reason: watchlistIds.has(Number(m.id))
+              ? "Already in your watchlist"
+              : "Based on movies you've watched",
+          }))
+        return NextResponse.json({
+          results: moviesWithReasons,
+          source: "completed-based",
+          personalization: {
+            quiz_weight: Math.round(quizWeight * 100) / 100,
+            completed_weight: Math.round(completedWeight * 100) / 100,
+            completed_count: completedCount,
+          },
+        })
+      }
+
       const movies = await fetchPopularFallback()
-      // Add generic explanations for popular movies
-      const moviesWithReasons = movies.map((m: any) => ({
-        ...m,
-        reason: watchlistIds.has(m.id) 
-          ? "Already in your watchlist" 
-          : "Trending now",
-      }))
+      const moviesWithReasons = movies
+        .filter((m: any) => !completedIds.has(Number(m.id)))
+        .map((m: any) => ({
+          ...m,
+          reason: watchlistIds.has(Number(m.id)) 
+            ? "Already in your watchlist" 
+            : "Trending now",
+        }))
       return NextResponse.json({
         results: moviesWithReasons,
         source: "popular",
+        personalization: {
+          quiz_weight: Math.round(quizWeight * 100) / 100,
+          completed_weight: Math.round(completedWeight * 100) / 100,
+          completed_count: completedCount,
+        },
       })
     }
 
-    // Convert genre names to TMDB IDs
-    const genreIds = prefs.genres
+    // Convert genre names to TMDB IDs, then blend with completed-movie
+    // genres proportionally based on adaptive weights.
+    const prefGenreIds = prefs.genres
       .map((name: string) => GENRE_NAME_TO_ID[name])
       .filter((id: number | undefined): id is number => typeof id === "number")
+    
+    // Weighted genre blending: allocate slots proportionally so quiz
+    // genres dominate early on, completed-movie genres take over later.
+    // Cap total to avoid over-constraining the AND-based TMDB query.
+    const MAX_DISCOVER_GENRES = 4
+    const quizSlots = Math.max(1, Math.round(MAX_DISCOVER_GENRES * quizWeight))
+    const completedSlots = MAX_DISCOVER_GENRES - quizSlots
+    const quizSelection = prefGenreIds.slice(0, quizSlots)
+    const usedQuizSet = new Set(quizSelection)
+    const completedSelection = completedGenreIds
+      .filter((id) => !usedQuizSet.has(id))
+      .slice(0, completedSlots)
+    const genreIds = [...quizSelection, ...completedSelection]
 
     // Fetch recommendations from TMDB discover
     const movies = await fetchDiscoverMovies(genreIds)
 
-    // Generate explanations for each movie
-    const moviesWithReasons = movies.map((m: any) => {
-      const movieGenres: string[] = m.genres || []
-      
-      // Check for watchlist overlap
-      if (watchlistIds.has(m.id)) {
-        return { ...m, reason: "Already in your watchlist" }
-      }
+    // Generate explanations for each movie, excluding completed movies from results
+    const moviesWithReasons = movies
+      .filter((m: any) => !completedIds.has(Number(m.id)))
+      .map((m: any) => {
+        const movieGenres: string[] = m.genres || []
+        
+        // Check for watchlist overlap
+        if (watchlistIds.has(Number(m.id))) {
+          return { ...m, reason: "Already in your watchlist" }
+        }
 
-      // Find matching genres between movie and user preferences
-      const matchingGenres = movieGenres.filter((g: string) => 
-        prefs.genres.some((pg: string) => pg.toLowerCase() === g.toLowerCase())
-      )
+        // Check if movie matches completed-movie genres (stronger signal)
+        const matchesCompleted = completedGenreIds.some((gid) => {
+          const genreName = Object.entries(GENRE_NAME_TO_ID).find(([, id]) => id === gid)?.[0]
+          return genreName && movieGenres.some((g: string) => g.toLowerCase() === genreName.toLowerCase())
+        })
 
-      // Build explanation based on matches
-      if (matchingGenres.length > 0) {
-        const genreList = matchingGenres.slice(0, 2).join(" and ")
-        return { ...m, reason: `Because you like ${genreList}` }
-      }
+        // Find matching genres between movie and user preferences
+        const matchingGenres = movieGenres.filter((g: string) => 
+          prefs.genres.some((pg: string) => pg.toLowerCase() === g.toLowerCase())
+        )
 
-      // Fallback explanations based on other preferences
-      if (prefs.moods && prefs.moods.length > 0) {
-        const mood = prefs.moods[0]
-        return { ...m, reason: `Matches your ${mood.toLowerCase()} mood` }
-      }
+        // Build explanation based on matches — prioritize the dominant signal
+        if (matchesCompleted && matchingGenres.length > 0) {
+          // Both signals match; lead with whichever is dominant
+          return completedWeight >= quizWeight
+            ? { ...m, reason: "Similar to movies you've watched" }
+            : { ...m, reason: `Because you like ${matchingGenres.slice(0, 2).join(" and ")}` }
+        }
 
-      if (prefs.popularity === "hidden") {
-        return { ...m, reason: "A hidden gem for you" }
-      }
+        if (matchesCompleted) {
+          return { ...m, reason: "Based on movies you've watched" }
+        }
 
-      if (prefs.popularity === "blockbuster") {
-        return { ...m, reason: "Popular pick for you" }
-      }
+        if (matchingGenres.length > 0) {
+          const genreList = matchingGenres.slice(0, 2).join(" and ")
+          return { ...m, reason: `Because you like ${genreList}` }
+        }
 
-      return { ...m, reason: "Recommended for you" }
-    })
+        // Fallback explanations based on other preferences
+        if (prefs.moods && prefs.moods.length > 0) {
+          const mood = prefs.moods[0]
+          return { ...m, reason: `Matches your ${mood.toLowerCase()} mood` }
+        }
+
+        if (prefs.popularity === "hidden") {
+          return { ...m, reason: "A hidden gem for you" }
+        }
+
+        if (prefs.popularity === "blockbuster") {
+          return { ...m, reason: "Popular pick for you" }
+        }
+
+        return { ...m, reason: "Recommended for you" }
+      })
 
     return NextResponse.json({
       results: moviesWithReasons,
       source: "personalized",
+      personalization: {
+        quiz_weight: Math.round(quizWeight * 100) / 100,
+        completed_weight: Math.round(completedWeight * 100) / 100,
+        completed_count: completedCount,
+      },
     })
   } catch (err) {
     const keyPresent = hasTmdbApiKey()

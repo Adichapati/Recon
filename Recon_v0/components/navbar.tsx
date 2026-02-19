@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { Film, Search, User, Menu, LogOut, Heart } from "lucide-react"
+import { Film, Search, User, Menu, LogOut, Heart, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -38,6 +38,7 @@ export function Navbar() {
         { href: "/home", label: "Home" },
         { href: "/search", label: "Search" },
         { href: "/watchlist", label: "Watchlist" },
+        { href: "/completed", label: "Completed" },
       ]
     : []
 
@@ -111,6 +112,11 @@ export function Navbar() {
                   <DropdownMenuItem asChild>
                     <Link href="/watchlist">
                       <Heart className="mr-2 size-4" /> Watchlist
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/completed">
+                      <CheckCircle className="mr-2 size-4" /> Completed
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

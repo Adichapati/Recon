@@ -6,10 +6,12 @@ type WatchlistRow = {
   movie_title?: string
   poster_path?: string
   created_at?: string
+  status?: string
 }
 
 export interface WatchlistItem extends Movie {
   addedAt: string
+  status: string
 }
 
 let cachedItems: WatchlistItem[] | null = null
@@ -35,6 +37,7 @@ function rowToItem(row: WatchlistRow): WatchlistItem | null {
     vote_average: 0,
     genres: [],
     addedAt: row.created_at ?? new Date().toISOString(),
+    status: row.status ?? "watchlist",
   }
 }
 
@@ -67,12 +70,13 @@ async function fetchJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> 
   return res.json() as Promise<T>
 }
 
-export async function getWatchlist(forceRefresh = false): Promise<WatchlistItem[]> {
-  if (!forceRefresh && cachedItems && Date.now() - cacheTimestamp < CACHE_TTL_MS) {
+export async function getWatchlist(forceRefresh = false, status?: "watchlist" | "completed"): Promise<WatchlistItem[]> {
+  if (!forceRefresh && !status && cachedItems && Date.now() - cacheTimestamp < CACHE_TTL_MS) {
     return cachedItems
   }
 
-  const rows = await fetchJson<WatchlistRow[]>("/api/watchlist", {
+  const url = status ? `/api/watchlist?status=${status}` : "/api/watchlist"
+  const rows = await fetchJson<WatchlistRow[]>(url, {
     method: "GET",
   })
 
@@ -80,8 +84,11 @@ export async function getWatchlist(forceRefresh = false): Promise<WatchlistItem[
     .map(rowToItem)
     .filter(Boolean) as WatchlistItem[]
 
-  cachedItems = items
-  cacheTimestamp = Date.now()
+  // Only update the default cache when fetching without a status filter.
+  if (!status) {
+    cachedItems = items
+    cacheTimestamp = Date.now()
+  }
   return items
 }
 
@@ -125,6 +132,36 @@ export async function isInWatchlist(movieId: number): Promise<boolean> {
     return list.some((item) => item.id === movieId)
   } catch (error) {
     console.error("[Watchlist] Error checking watchlist:", error)
+    return false
+  }
+}
+
+export async function markAsCompleted(movieId: number): Promise<boolean> {
+  try {
+    await fetchJson("/api/watchlist", {
+      method: "PATCH",
+      body: JSON.stringify({ movieId, status: "completed" }),
+    })
+
+    clearWatchlistCache()
+    return true
+  } catch (error) {
+    console.error("[Watchlist] Error marking as completed:", error)
+    return false
+  }
+}
+
+export async function markAsWatchlist(movieId: number): Promise<boolean> {
+  try {
+    await fetchJson("/api/watchlist", {
+      method: "PATCH",
+      body: JSON.stringify({ movieId, status: "watchlist" }),
+    })
+
+    clearWatchlistCache()
+    return true
+  } catch (error) {
+    console.error("[Watchlist] Error marking as watchlist:", error)
     return false
   }
 }

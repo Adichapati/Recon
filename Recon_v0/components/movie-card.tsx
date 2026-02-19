@@ -4,12 +4,12 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Star, Plus, Check, Bookmark } from "lucide-react"
+import { Star, Plus, Check, Bookmark, Eye } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/hooks/use-toast"
 import type { Movie } from "@/lib/mock-api"
-import { isInWatchlist, toggleWatchlist } from "@/lib/watchlist"
+import { isInWatchlist, toggleWatchlist, markAsCompleted } from "@/lib/watchlist"
 
 interface MovieCardProps {
   movie: Movie
@@ -38,6 +38,27 @@ export function MovieCard({ movie, showReason = false, variant = "default" }: Mo
     })
   }
 
+  const handleMarkAsWatched = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    markAsCompleted(movie.id).then((ok) => {
+      if (ok) {
+        setIsInWatchlistState(false)
+        toast({
+          title: "Marked as watched",
+          description: `${movie.title} moved to your completed list.`,
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to mark movie as watched.",
+          variant: "destructive",
+        })
+      }
+    })
+  }
+
   const isLarge = variant === "large"
 
   return (
@@ -63,20 +84,33 @@ export function MovieCard({ movie, showReason = false, variant = "default" }: Mo
           {/* Smooth gradient overlay - always visible at bottom for title */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent opacity-70 transition-opacity duration-300 group-hover:opacity-95" />
 
-          {/* Bookmark button - top right, smooth fade */}
-          <Button
-            size="icon"
-            variant="ghost"
-            className={`absolute top-2 right-2 size-8 transition-all duration-300 ease-out ${
-              isInWatchlistState 
-                ? "bg-amber-500/90 text-black opacity-100 hover:bg-amber-400" 
-                : "bg-black/40 text-white opacity-0 group-hover:opacity-100 hover:bg-black/60"
-            }`}
-            onClick={handleWatchlistToggle}
-          >
-            {isInWatchlistState ? <Check className="size-4" /> : <Bookmark className="size-4" />}
-            <span className="sr-only">{isInWatchlistState ? "Remove from Watchlist" : "Add to Watchlist"}</span>
-          </Button>
+          {/* Action buttons - top right, smooth fade */}
+          <div className="absolute top-2 right-2 flex flex-col gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className={`size-8 transition-all duration-300 ease-out ${
+                isInWatchlistState 
+                  ? "bg-amber-500/90 text-black opacity-100 hover:bg-amber-400" 
+                  : "bg-black/40 text-white opacity-0 group-hover:opacity-100 hover:bg-black/60"
+              }`}
+              onClick={handleWatchlistToggle}
+            >
+              {isInWatchlistState ? <Check className="size-4" /> : <Bookmark className="size-4" />}
+              <span className="sr-only">{isInWatchlistState ? "Remove from Watchlist" : "Add to Watchlist"}</span>
+            </Button>
+            {isInWatchlistState && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-8 bg-green-600/90 text-white opacity-100 transition-all duration-300 ease-out hover:bg-green-500"
+                onClick={handleMarkAsWatched}
+              >
+                <Eye className="size-4" />
+                <span className="sr-only">Mark as Watched</span>
+              </Button>
+            )}
+          </div>
 
           {/* Rating badge - top left, always visible */}
           <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-xs font-semibold text-amber-400 backdrop-blur-sm">

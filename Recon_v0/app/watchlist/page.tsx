@@ -17,8 +17,8 @@ export default function WatchlistPage() {
   useEffect(() => {
     const loadWatchlist = async () => {
       try {
-        const items = await getWatchlist(true)
-        const movies: Movie[] = items.map(({ addedAt: _addedAt, ...movie }) => movie)
+        const items = await getWatchlist(true, "watchlist")
+        const movies: Movie[] = items.map(({ addedAt: _addedAt, status: _status, ...movie }) => movie)
         setWatchlist(movies)
       } catch (error) {
         console.error("[Watchlist] Error loading watchlist:", error)
