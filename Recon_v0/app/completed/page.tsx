@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { MovieGrid } from "@/components/movie-grid"
 import { MovieGridSkeleton } from "@/components/movie-skeleton"
 import { Button } from "@/components/ui/button"
-import { Eye } from "lucide-react"
 import { ProtectedLayout } from "@/components/protected-layout"
 import { toast } from "@/hooks/use-toast"
 import type { Movie } from "@/lib/mock-api"
@@ -57,7 +56,8 @@ export default function CompletedPage() {
     return (
       <ProtectedLayout>
         <div className="container mx-auto px-4 py-12">
-          <h1 className="mb-8 text-4xl font-bold text-foreground">Completed</h1>
+          <p className="font-retro mb-1 text-[10px] uppercase tracking-wider text-primary">// COMPLETED_MODULE</p>
+          <h1 className="font-retro mb-8 text-2xl font-bold uppercase tracking-wider text-foreground">Completed</h1>
           <MovieGridSkeleton count={12} />
         </div>
       </ProtectedLayout>
@@ -68,11 +68,12 @@ export default function CompletedPage() {
     <ProtectedLayout>
       <div className="container mx-auto px-4 py-12">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground">
+          <p className="font-retro mb-1 text-[10px] uppercase tracking-wider text-primary">// COMPLETED_MODULE</p>
+          <h1 className="font-retro text-2xl font-bold uppercase tracking-wider text-foreground">
             Completed
             {completed.length > 0 && (
-              <span className="ml-4 text-2xl font-normal text-muted-foreground">
-                ({completed.length} {completed.length === 1 ? "movie" : "movies"})
+              <span className="font-retro ml-3 text-sm font-normal tabular-nums text-muted-foreground">
+                [{completed.length} {completed.length === 1 ? "ENTRY" : "ENTRIES"}]
               </span>
             )}
           </h1>
@@ -80,15 +81,15 @@ export default function CompletedPage() {
 
         {completed.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="mb-6 rounded-full bg-muted p-6">
-              <Eye className="size-12 text-muted-foreground" />
-            </div>
-            <h2 className="mb-4 text-2xl font-semibold text-foreground">No completed movies yet</h2>
-            <p className="mb-8 max-w-md text-muted-foreground">
-              Movies you mark as watched will appear here. Use the eye icon on any movie in your watchlist to mark it as completed.
+            <p className="font-retro mb-4 text-3xl text-muted-foreground/30">[ ]</p>
+            <h2 className="font-retro mb-4 text-sm font-semibold uppercase tracking-wider text-foreground">No completed movies yet</h2>
+            <p className="font-retro mb-8 max-w-md text-xs text-muted-foreground">
+              Movies you mark as watched will appear here. Use the watch action on any movie in your queue.
             </p>
             <Button asChild>
-              <a href="/watchlist">Go to Watchlist</a>
+              <a href="/watchlist">
+                <span className="font-retro text-xs uppercase tracking-wider">GO TO QUEUE</span>
+              </a>
             </Button>
           </div>
         ) : (

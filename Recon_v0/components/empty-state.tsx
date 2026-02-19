@@ -24,17 +24,17 @@ export function EmptyState({ icon, title, description, action, className }: Empt
       <div className="flex max-w-md flex-col items-center text-center">
         {icon && (
           <div
-            className="mb-4 flex size-16 items-center justify-center rounded-full bg-muted text-muted-foreground"
+            className="mb-4 flex size-12 items-center justify-center border border-border text-muted-foreground"
             aria-hidden="true"
           >
             {icon}
           </div>
         )}
-        <h3 className="mb-2 text-lg font-semibold text-foreground">{title}</h3>
-        {description && <p className="mb-6 text-sm text-muted-foreground">{description}</p>}
+        <h3 className="font-retro mb-2 text-sm font-semibold uppercase tracking-wider text-foreground">{title}</h3>
+        {description && <p className="font-retro mb-6 text-xs text-muted-foreground">{description}</p>}
         {action && (
           <Button onClick={action.onClick} variant="default">
-            {action.label}
+            <span className="font-retro text-xs uppercase tracking-wider">{action.label}</span>
           </Button>
         )}
       </div>

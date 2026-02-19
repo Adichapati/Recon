@@ -15,8 +15,8 @@ export function MovieGrid({ movies, className = '', showReason = false, variant 
   
   return (
     <div className={`grid gap-4 ${className || defaultGridClass}`}>
-      {movies.map((movie) => (
-        <MovieCard key={movie.id} movie={movie} showReason={showReason} variant={variant} />
+      {movies.map((movie, index) => (
+        <MovieCard key={movie.id} movie={movie} showReason={showReason} variant={variant} index={index} />
       ))}
     </div>
   )

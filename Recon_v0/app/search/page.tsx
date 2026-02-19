@@ -8,7 +8,6 @@ import { MovieGridSkeleton } from "@/components/movie-skeleton"
 import { EmptyState } from "@/components/empty-state"
 import { ErrorState } from "@/components/error-state"
 import { searchMovies, type Movie } from "@/lib/mock-api"
-import { Search } from "lucide-react"
 
 export default function SearchPage() {
   const [movies, setMovies] = useState<Movie[]>([])
@@ -45,7 +44,8 @@ export default function SearchPage() {
     <ProtectedLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="mb-6 text-3xl font-bold text-foreground">Search Movies</h1>
+          <p className="font-retro text-[10px] uppercase tracking-[0.3em] text-primary/60">// SEARCH_MODULE</p>
+          <h1 className="font-retro mt-2 mb-6 text-2xl font-bold uppercase tracking-wider text-foreground">Search</h1>
           <SearchBar onSearch={handleSearch} />
         </div>
 
@@ -61,8 +61,8 @@ export default function SearchPage() {
 
         {!isLoading && !searchError && hasSearched && movies.length > 0 && (
           <div>
-            <p className="mb-6 text-muted-foreground">
-              Found {movies.length} {movies.length === 1 ? "result" : "results"}
+            <p className="font-retro mb-6 text-xs uppercase tracking-wider text-muted-foreground">
+              &gt; {movies.length} {movies.length === 1 ? "RESULT" : "RESULTS"} FOR &quot;{lastQuery.toUpperCase()}&quot;
             </p>
             <MovieGrid movies={movies} />
           </div>
@@ -70,7 +70,6 @@ export default function SearchPage() {
 
         {!isLoading && !searchError && hasSearched && movies.length === 0 && (
           <EmptyState
-            icon={<Search className="size-8" />}
             title="No movies found"
             description="Try searching with different keywords or check your spelling"
           />
@@ -78,7 +77,6 @@ export default function SearchPage() {
 
         {!isLoading && !searchError && !hasSearched && (
           <EmptyState
-            icon={<Search className="size-8" />}
             title="Start searching for movies"
             description="Enter a movie title in the search bar above to find your favorites"
           />

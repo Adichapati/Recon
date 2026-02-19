@@ -4,10 +4,11 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Providers } from "./providers"
 import { Toaster } from "@/components/ui/toaster"
+import { ScanlineOverlay } from "@/components/retro"
 import "./globals.css"
 
-const _geistSans = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const geistSans = Geist({ subsets: ["latin"], variable: "--font-sans" })
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
 export const metadata: Metadata = {
   title: "Recon - Your Movie Companion",
@@ -21,8 +22,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className="font-sans antialiased">
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <Providers>
+          <ScanlineOverlay opacity={0.025} noise />
           {children}
           <Toaster />
         </Providers>

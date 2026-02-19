@@ -1,7 +1,6 @@
 "use client"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { AlertCircle } from "lucide-react"
 
 interface ErrorStateProps {
   title?: string
@@ -15,7 +14,7 @@ export function ErrorState({
   title = "Something went wrong",
   description = "An error occurred while loading this content. Please try again.",
   onRetry,
-  retryLabel = "Try Again",
+  retryLabel = "RETRY",
   className,
 }: ErrorStateProps) {
   return (
@@ -25,17 +24,12 @@ export function ErrorState({
       aria-live="polite"
     >
       <div className="flex max-w-md flex-col items-center text-center">
-        <div
-          className="mb-4 flex size-16 items-center justify-center rounded-full bg-destructive/10 text-destructive"
-          aria-hidden="true"
-        >
-          <AlertCircle className="size-8" />
-        </div>
-        <h3 className="mb-2 text-lg font-semibold text-foreground">{title}</h3>
-        <p className="mb-6 text-sm text-muted-foreground">{description}</p>
+        <p className="font-retro mb-3 text-2xl font-bold text-destructive">[ERR]</p>
+        <h3 className="font-retro mb-2 text-sm font-semibold uppercase tracking-wider text-foreground">{title}</h3>
+        <p className="font-retro mb-6 text-xs text-muted-foreground">{description}</p>
         {onRetry && (
           <Button onClick={onRetry} variant="default">
-            {retryLabel}
+            <span className="font-retro text-xs uppercase tracking-wider">{retryLabel}</span>
           </Button>
         )}
       </div>

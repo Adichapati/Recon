@@ -5,7 +5,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
-import { Film, Mail, Lock, User, Eye, EyeOff, Loader2, Check, X } from "lucide-react"
+import { Eye, EyeOff, Check, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -92,99 +92,94 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Left side - Branding */}
-      <div className="relative hidden w-1/2 bg-gradient-to-br from-primary/20 via-background to-background lg:block">
-        <div className="absolute inset-0 bg-[url('/cinematic-movie-theater.jpg')] bg-cover bg-center opacity-30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
-        <div className="relative flex h-full flex-col justify-between p-12">
+    <div className="flex min-h-screen flex-col bg-background lg:flex-row">
+      {/* Left side — Terminal branding panel */}
+      <div className="relative hidden w-1/2 border-r border-border lg:flex lg:flex-col lg:justify-between">
+        <div className="retro-dot-grid pointer-events-none absolute inset-0" aria-hidden="true" />
+        <div className="relative flex h-full flex-col justify-between p-10">
           <Link href="/" className="flex items-center gap-2">
-            <Film className="size-10 text-primary" />
-            <span className="text-2xl font-bold">Recon</span>
+            <span className="font-retro text-lg font-bold uppercase tracking-[0.2em] text-primary">[R]</span>
+            <span className="font-retro text-sm uppercase tracking-[0.15em] text-foreground">Recon</span>
           </Link>
           <div className="max-w-md">
-            <h2 className="mb-4 text-4xl font-bold">Start your journey</h2>
-            <p className="text-lg text-muted-foreground">
+            <p className="font-retro mb-3 text-[10px] uppercase tracking-[0.3em] text-primary/60">
+              // NEW_USER_MODULE
+            </p>
+            <h2 className="font-retro mb-4 text-3xl font-bold uppercase tracking-wider text-foreground">
+              Start your journey
+            </h2>
+            <p className="font-retro text-sm leading-relaxed text-muted-foreground">
               Create an account to get personalized movie recommendations, build your watchlist, and discover your next favorite film.
             </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            © 2025 Recon. Your personal movie companion.
+          <p className="font-retro text-[10px] uppercase tracking-wider text-muted-foreground/40">
+            &copy; 2025 Recon. Your personal movie companion.
           </p>
         </div>
       </div>
 
-      {/* Right side - Form */}
+      {/* Right side — Form */}
       <div className="flex w-full items-center justify-center p-8 lg:w-1/2">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
           <div className="flex flex-col items-center gap-2 lg:hidden">
             <Link href="/" className="flex items-center gap-2">
-              <Film className="size-10 text-primary" />
-              <span className="text-2xl font-bold">Recon</span>
+              <span className="font-retro text-lg font-bold uppercase tracking-[0.2em] text-primary">[R]</span>
+              <span className="font-retro text-sm uppercase tracking-[0.15em] text-foreground">Recon</span>
             </Link>
           </div>
 
           <div className="space-y-2 text-center lg:text-left">
-            <h1 className="text-3xl font-bold tracking-tight">Create account</h1>
-            <p className="text-muted-foreground">
+            <h1 className="font-retro text-2xl font-bold uppercase tracking-wider text-foreground">Create account</h1>
+            <p className="font-retro text-xs text-muted-foreground">
               Enter your details to get started
             </p>
           </div>
 
           {/* Error message */}
           {error && (
-            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
+            <div className="font-retro border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
+              <span className="mr-2 text-destructive/60">[ERR]</span>{error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="pl-10"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+              <Input
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                disabled={isLoading}
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
+                  className="pr-10"
                   required
                   disabled={isLoading}
                 />
@@ -199,12 +194,12 @@ export default function SignupPage() {
               </div>
               {/* Password requirements */}
               {password.length > 0 && (
-                <div className="mt-2 space-y-1 text-xs">
-                  <div className={`flex items-center gap-1 ${passwordChecks.length ? "text-green-500" : "text-muted-foreground"}`}>
+                <div className="font-retro mt-2 space-y-1 text-[10px] uppercase tracking-wider">
+                  <div className={`flex items-center gap-1.5 ${passwordChecks.length ? "text-primary" : "text-muted-foreground"}`}>
                     {passwordChecks.length ? <Check className="size-3" /> : <X className="size-3" />}
                     At least 8 characters
                   </div>
-                  <div className={`flex items-center gap-1 ${passwordChecks.hasLetter ? "text-green-500" : "text-muted-foreground"}`}>
+                  <div className={`flex items-center gap-1.5 ${passwordChecks.hasLetter ? "text-primary" : "text-muted-foreground"}`}>
                     {passwordChecks.hasLetter ? <Check className="size-3" /> : <X className="size-3" />}
                     Contains a letter
                   </div>
@@ -214,22 +209,21 @@ export default function SignupPage() {
 
             <Button type="submit" className="w-full" size="lg" disabled={isLoading || !isPasswordValid}>
               {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Creating account...
-                </>
+                <span className="font-retro text-xs uppercase tracking-wider">CREATING ACCOUNT...</span>
               ) : (
-                "Create Account"
+                <span className="font-retro text-xs uppercase tracking-wider">CREATE ACCOUNT</span>
               )}
             </Button>
           </form>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t" />
+              <div className="w-full border-t border-border" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+            <div className="relative flex justify-center">
+              <span className="font-retro bg-background px-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -241,33 +235,23 @@ export default function SignupPage() {
             disabled={isGoogleLoading}
           >
             {isGoogleLoading ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <span className="font-retro text-xs uppercase tracking-wider">CONNECTING...</span>
             ) : (
-              <svg className="mr-2 size-4" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
+              <>
+                <svg className="mr-2 size-4" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                <span className="font-retro text-xs uppercase tracking-wider">Google</span>
+              </>
             )}
-            Continue with Google
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="font-retro text-center text-xs text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/login" className="font-medium text-primary hover:underline">
+            <Link href="/login" className="text-primary hover:underline">
               Sign in
             </Link>
           </p>

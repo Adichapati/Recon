@@ -4,16 +4,12 @@ import { useEffect, useMemo, useState } from "react"
 import { ProtectedLayout } from "@/components/protected-layout"
 import { MovieGrid } from "@/components/movie-grid"
 import { MovieGridSkeleton } from "@/components/movie-skeleton"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { toast } from "@/hooks/use-toast"
 import type { Movie } from "@/lib/mock-api"
 import { clearWatchlistCache, getWatchlist } from "@/lib/watchlist"
 import type { WatchlistItem } from "@/lib/watchlist"
-import { BarChart3, Calendar, Eye, Film, Mail, Tag } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
 import { extractGenreNames } from "@/lib/genres"
 
@@ -205,201 +201,184 @@ export default function ProfilePage() {
     <ProtectedLayout>
       <div className="container mx-auto px-4 py-12">
         <div className="mx-auto max-w-4xl">
-          <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="size-20">
-                    <AvatarImage src={user?.image ?? "/placeholder.svg"} alt={user?.name ?? "User"} />
-                    <AvatarFallback className="bg-primary text-2xl text-primary-foreground">
-                      {user?.name?.[0] ?? "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-2xl">{user?.name ?? "Profile"}</CardTitle>
-                    <CardDescription className="mt-1">{user?.email ?? ""}</CardDescription>
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    clearWatchlistCache()
-                    signOut()
-                  }}
-                >
-                  Logout
-                </Button>
+
+          {/* ── User header ─────────────────────────────── */}
+          <div className="mb-8 flex items-start justify-between gap-4 border-b border-border pb-6">
+            <div className="flex items-center gap-4">
+              {/* Text-based avatar */}
+              <div className="flex size-14 items-center justify-center border border-primary bg-primary/10">
+                <span className="font-retro text-xl font-bold text-primary">
+                  {user?.name?.[0]?.toUpperCase() ?? "U"}
+                </span>
               </div>
-            </CardHeader>
-
-            <CardContent className="space-y-6">
-              <Separator />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="flex items-center gap-3 rounded-lg border p-4">
-                  <Mail className="size-5 text-primary" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{user?.email ?? ""}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 rounded-lg border p-4">
-                  <Film className="size-5 text-primary" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Watchlist</p>
-                    <p className="font-medium">{watchlistItems.length}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 rounded-lg border p-4">
-                  <Tag className="size-5 text-primary" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Top Genres</p>
-                    <p className="font-medium">{topGenres.length}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 rounded-lg border p-4">
-                  <Eye className="size-5 text-primary" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                    <p className="font-medium">{completedCount}</p>
-                  </div>
-                </div>
+              <div>
+                <h1 className="font-retro text-xl font-bold uppercase tracking-wider text-foreground">
+                  {user?.name ?? "Profile"}
+                </h1>
+                <p className="font-retro mt-1 text-xs text-muted-foreground">{user?.email ?? ""}</p>
               </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                clearWatchlistCache()
+                signOut()
+              }}
+            >
+              <span className="font-retro text-xs uppercase tracking-wider">LOGOUT</span>
+            </Button>
+          </div>
 
-              <Separator />
+          {/* ── Stats grid ──────────────────────────────── */}
+          <div className="mb-8 grid gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+            <div className="bg-background p-4">
+              <p className="font-retro text-[10px] uppercase tracking-wider text-muted-foreground">Email</p>
+              <p className="font-retro mt-1 truncate text-sm text-foreground">{user?.email ?? ""}</p>
+            </div>
+            <div className="bg-background p-4">
+              <p className="font-retro text-[10px] uppercase tracking-wider text-muted-foreground">Queue</p>
+              <p className="font-retro mt-1 text-sm tabular-nums text-foreground">{watchlistItems.length}</p>
+            </div>
+            <div className="bg-background p-4">
+              <p className="font-retro text-[10px] uppercase tracking-wider text-muted-foreground">Top Genres</p>
+              <p className="font-retro mt-1 text-sm tabular-nums text-foreground">{topGenres.length}</p>
+            </div>
+            <div className="bg-background p-4">
+              <p className="font-retro text-[10px] uppercase tracking-wider text-muted-foreground">Completed</p>
+              <p className="font-retro mt-1 text-sm tabular-nums text-foreground">{completedCount}</p>
+            </div>
+          </div>
 
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Top Genres</h3>
-                {isLoadingWatchlist ? (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
-                ) : topGenres.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Add more movies to your watchlist to see genre insights.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {topGenres.map((g) => (
-                      <Badge key={g.name} variant="secondary">
-                        {g.name}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+          {/* ── Top Genres ──────────────────────────────── */}
+          <section className="mb-8">
+            <h2 className="font-retro mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-primary">&gt; Top Genres</h2>
+            {isLoadingWatchlist ? (
+              <p className="font-retro text-xs text-muted-foreground">Loading...</p>
+            ) : topGenres.length === 0 ? (
+              <p className="font-retro text-xs text-muted-foreground">Add more movies to your queue to see genre insights.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {topGenres.map((g) => (
+                  <Badge key={g.name} variant="secondary">
+                    {g.name}
+                  </Badge>
+                ))}
               </div>
+            )}
+          </section>
 
-              <Separator />
+          <div className="my-6 border-t border-border/20" />
 
-              {/* ── Your Viewing Insights ────────────────────────── */}
+          {/* ── Viewing Insights ────────────────────────── */}
+          <section className="mb-8">
+            <h2 className="font-retro mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">&gt; Viewing Insights</h2>
+
+            {isLoadingInsights ? (
+              <p className="font-retro text-xs text-muted-foreground">Analyzing your viewing history...</p>
+            ) : completedCount === 0 ? (
+              <p className="font-retro text-xs text-muted-foreground">
+                Mark movies as watched to unlock personalised insights.
+              </p>
+            ) : (
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="size-5 text-primary" />
-                  <h3 className="text-lg font-semibold">Your Viewing Insights</h3>
+                {/* Completed genres */}
+                <div className="space-y-2">
+                  <p className="font-retro text-[10px] uppercase tracking-wider text-muted-foreground">Top Genres You Watch</p>
+                  {completedTopGenres.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {completedTopGenres.map((g) => (
+                        <Badge key={g.name} variant="outline">
+                          {g.name} ({g.count})
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="font-retro text-xs text-muted-foreground">Not enough data yet.</p>
+                  )}
                 </div>
 
-                {isLoadingInsights ? (
-                  <p className="text-sm text-muted-foreground">Analyzing your viewing history…</p>
-                ) : completedCount === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Mark movies as watched to unlock personalised insights.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {/* Completed genres */}
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">Top Genres You Watch</p>
-                      {completedTopGenres.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {completedTopGenres.map((g) => (
-                            <Badge key={g.name} variant="outline">
-                              {g.name} ({g.count})
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Not enough data yet.</p>
-                      )}
+                {/* Weight comparison */}
+                <div className="space-y-2">
+                  <p className="font-retro text-[10px] uppercase tracking-wider text-muted-foreground">Recommendation Influence</p>
+                  <div className="flex gap-px border border-border bg-border">
+                    <div className="flex-1 bg-background p-3">
+                      <p className="font-retro text-[10px] text-muted-foreground">QUIZ PREF</p>
+                      <p className="font-retro text-lg font-semibold tabular-nums text-foreground">{quizPct}%</p>
                     </div>
-
-                    {/* Weight comparison */}
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">Recommendation Influence</p>
-                      <div className="flex gap-2">
-                        <div className="flex-1 rounded-lg border p-3">
-                          <p className="text-xs text-muted-foreground">Quiz Preferences</p>
-                          <p className="text-xl font-semibold">{quizPct}%</p>
-                        </div>
-                        <div className="flex-1 rounded-lg border p-3">
-                          <p className="text-xs text-muted-foreground">Watch History</p>
-                          <p className="text-xl font-semibold">{completedPct}%</p>
-                        </div>
-                      </div>
-                      {/* Visual weight bar */}
-                      <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="bg-primary transition-all duration-500"
-                          style={{ width: `${quizPct}%` }}
-                        />
-                        <div
-                          className="bg-primary/50 transition-all duration-500"
-                          style={{ width: `${completedPct}%` }}
-                        />
-                      </div>
+                    <div className="flex-1 bg-background p-3">
+                      <p className="font-retro text-[10px] text-muted-foreground">WATCH HIST</p>
+                      <p className="font-retro text-lg font-semibold tabular-nums text-foreground">{completedPct}%</p>
                     </div>
-
-                    {/* Insight message */}
-                    <p className="text-sm italic text-muted-foreground">
-                      {completedWeight > quizWeight
-                        ? "Your recommendations are now mostly driven by what you watch."
-                        : "Your initial preferences still guide your recommendations."}
-                    </p>
                   </div>
-                )}
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Recently Added</h3>
-                {isLoadingWatchlist ? (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
-                ) : recentItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No watchlist activity yet.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {recentItems.map((item) => {
-                      const d = safeDate(item.addedAt)
-                      const when = d ? d.toLocaleString() : ""
-                      return (
-                        <div key={item.id} className="flex items-center justify-between gap-4 rounded-lg border p-3">
-                          <div className="min-w-0">
-                            <p className="truncate font-medium">{item.title}</p>
-                            <p className="text-sm text-muted-foreground">Added {when}</p>
-                          </div>
-                          <Button asChild variant="outline" size="sm">
-                            <a href={`/movie/${item.id}`}>View</a>
-                          </Button>
-                        </div>
-                      )
-                    })}
+                  {/* Visual weight bar — square */}
+                  <div className="flex h-1.5 w-full overflow-hidden bg-muted">
+                    <div
+                      className="bg-primary transition-all duration-500"
+                      style={{ width: `${quizPct}%` }}
+                    />
+                    <div
+                      className="bg-primary/40 transition-all duration-500"
+                      style={{ width: `${completedPct}%` }}
+                    />
                   </div>
-                )}
-              </div>
+                </div>
 
-              <Separator />
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Your Watchlist</h3>
-                {isLoadingWatchlist ? (
-                  <MovieGridSkeleton count={8} />
-                ) : watchlistMovies.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Your watchlist is empty.</p>
-                ) : (
-                  <MovieGrid movies={watchlistMovies} showReason={false} />
-                )}
+                {/* Insight message */}
+                <p className="font-retro text-xs text-muted-foreground">
+                  {completedWeight > quizWeight
+                    ? "> Recommendations now mostly driven by watch history."
+                    : "> Initial preferences still guide recommendations."}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </section>
+
+          <div className="my-6 border-t border-border/20" />
+
+          {/* ── Recently Added ──────────────────────────── */}
+          <section className="mb-8">
+            <h2 className="font-retro mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-primary">&gt; Recently Added</h2>
+            {isLoadingWatchlist ? (
+              <p className="font-retro text-xs text-muted-foreground">Loading...</p>
+            ) : recentItems.length === 0 ? (
+              <p className="font-retro text-xs text-muted-foreground">No queue activity yet.</p>
+            ) : (
+              <div className="space-y-0 border border-border">
+                {recentItems.map((item, i) => {
+                  const d = safeDate(item.addedAt)
+                  const when = d ? d.toLocaleString() : ""
+                  return (
+                    <div key={item.id} className={`flex items-center justify-between gap-4 p-3 ${i > 0 ? "border-t border-border/30" : ""}`}>
+                      <div className="min-w-0">
+                        <p className="font-retro truncate text-sm text-foreground">{item.title}</p>
+                        <p className="font-retro text-[10px] text-muted-foreground/50">Added {when}</p>
+                      </div>
+                      <Button asChild variant="outline" size="sm">
+                        <a href={`/movie/${item.id}`}>
+                          <span className="font-retro text-[10px] uppercase tracking-wider">VIEW</span>
+                        </a>
+                      </Button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+
+          <div className="my-6 border-t border-border/20" />
+
+          {/* ── Your Watchlist ──────────────────────────── */}
+          <section className="mb-8">
+            <h2 className="font-retro mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">&gt; Your Queue</h2>
+            {isLoadingWatchlist ? (
+              <MovieGridSkeleton count={8} />
+            ) : watchlistMovies.length === 0 ? (
+              <p className="font-retro text-xs text-muted-foreground">Your queue is empty.</p>
+            ) : (
+              <MovieGrid movies={watchlistMovies} showReason={false} />
+            )}
+          </section>
+
         </div>
       </div>
     </ProtectedLayout>

@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -27,22 +26,17 @@ export function SearchBar({ onSearch, placeholder = "Search movies..." }: Search
         <Label htmlFor="movie-search" className="sr-only">
           Search for movies
         </Label>
-        <Search
-          className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none"
-          aria-hidden="true"
-        />
         <Input
           id="movie-search"
           type="text"
           placeholder={placeholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-10"
           aria-label="Movie search input"
         />
       </div>
       <Button type="submit" aria-label="Search for movies">
-        Search
+        <span className="font-retro text-xs uppercase tracking-wider">SEARCH</span>
       </Button>
     </form>
   )

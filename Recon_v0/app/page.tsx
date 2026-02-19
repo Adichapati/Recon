@@ -1,120 +1,97 @@
 import Link from "next/link"
-import Image from "next/image"
-import { Star, TrendingUp, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { MainLayout } from "@/components/layouts/main-layout"
+import { LandingHero } from "@/components/retro/landing-hero"
+import { FocusFrame } from "@/components/retro/focus-frame"
+import { ScrollReveal } from "@/components/retro/scroll-reveal"
+
+const features = [
+  {
+    label: "01",
+    title: "ADAPTIVE RECOMMENDATIONS",
+    description:
+      "The engine learns from every movie you complete. Quiz preferences decay, watch history takes over.",
+  },
+  {
+    label: "02",
+    title: "WATCHLIST & TRACKING",
+    description:
+      "Save films. Mark them watched. Your completed list becomes a permanent taste signal.",
+  },
+  {
+    label: "03",
+    title: "VIEWING INSIGHTS",
+    description:
+      "See exactly how much weight comes from your quiz versus your watch history. Full transparency.",
+  },
+]
 
 export default function LandingPage() {
   return (
     <MainLayout>
       <div className="min-h-screen">
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 -z-10">
-            <Image
-              src="/cinematic-movie-theater.jpg"
-              alt="Hero background"
-              fill
-              className="object-cover opacity-20"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
-          </div>
+        {/* ── Hero ──────────────────────────────────────── */}
+        <LandingHero />
 
-          <div className="container mx-auto px-4 py-24 md:py-32">
-            <div className="mx-auto max-w-3xl text-center">
-              <h1 className="mb-6 text-balance text-4xl font-bold leading-tight text-foreground md:text-6xl">
-                Your Personal Movie Companion
-              </h1>
-              <p className="mb-8 text-pretty text-lg leading-relaxed text-muted-foreground md:text-xl">
-                Discover, track, and enjoy your favorite films with personalized recommendations and a beautiful
-                interface designed for movie lovers.
+        {/* ── Features grid ────────────────────────────── */}
+        <section className="relative border-t border-border">
+          {/* Grid dot background */}
+          <div className="retro-dot-grid pointer-events-none absolute inset-0" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-6xl px-6 py-20 md:py-28">
+            <ScrollReveal>
+              <p className="font-retro mb-12 text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                // SYSTEM CAPABILITIES
               </p>
-              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <Link href="/signup">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    Get Started Free
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent">
-                    Sign in with Google
-                  </Button>
-                </Link>
-              </div>
+            </ScrollReveal>
+
+            <div className="grid gap-px border border-border md:grid-cols-3">
+              {features.map((f, i) => (
+                <ScrollReveal key={f.label} delay={i * 0.12}>
+                  <FocusFrame className="group border border-border p-8 transition-colors duration-200 hover:bg-card">
+                    <span className="font-retro text-xs text-primary">{f.label}</span>
+                    <h3 className="font-retro mt-3 text-sm font-semibold tracking-wider text-foreground">
+                      {f.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                      {f.description}
+                    </p>
+                  </FocusFrame>
+                </ScrollReveal>
+              ))}
             </div>
           </div>
         </section>
 
-        <section className="border-t border-border bg-card/50 py-16 md:py-24">
-          <div className="container mx-auto px-4">
-            <h2 className="mb-12 text-center text-3xl font-bold text-foreground">
-              Everything you need to track movies
-            </h2>
-            <div className="grid gap-8 md:grid-cols-3">
-              <Card className="border-border">
-                <CardContent className="flex flex-col items-center gap-4 p-6 text-center">
-                  <div
-                    className="flex size-12 items-center justify-center rounded-full bg-primary/10"
-                    aria-hidden="true"
-                  >
-                    <Star className="size-6 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-foreground">Personalized Recommendations</h3>
-                  <p className="text-muted-foreground">
-                    Get movie suggestions tailored to your taste based on your viewing history and ratings.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border">
-                <CardContent className="flex flex-col items-center gap-4 p-6 text-center">
-                  <div
-                    className="flex size-12 items-center justify-center rounded-full bg-primary/10"
-                    aria-hidden="true"
-                  >
-                    <TrendingUp className="size-6 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-foreground">Track Your Watchlist</h3>
-                  <p className="text-muted-foreground">
-                    Never forget a movie again. Add films to your watchlist and track what you've watched.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border">
-                <CardContent className="flex flex-col items-center gap-4 p-6 text-center">
-                  <div
-                    className="flex size-12 items-center justify-center rounded-full bg-primary/10"
-                    aria-hidden="true"
-                  >
-                    <Users className="size-6 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-foreground">Community Reviews</h3>
-                  <p className="text-muted-foreground">
-                    Read reviews from fellow movie enthusiasts and share your own thoughts on films.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-border py-16 md:py-24">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="mb-4 text-3xl font-bold text-foreground">Ready to start?</h2>
-            <p className="mb-8 text-lg text-muted-foreground">
-              Join thousands of movie lovers tracking their favorite films
+        {/* ── CTA ──────────────────────────────────────── */}
+        <section className="border-t border-border">
+          <ScrollReveal className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 py-20 text-center md:py-28">
+            <p className="font-retro text-xs uppercase tracking-[0.3em] text-muted-foreground">
+              // READY
             </p>
-            <Link href="/signup">
-              <Button size="lg">Create Your Free Account</Button>
-            </Link>
-          </div>
+            <h2 className="font-retro text-2xl font-semibold tracking-wide text-foreground md:text-3xl">
+              START BUILDING YOUR TASTE PROFILE
+            </h2>
+            <div className="mt-2 flex gap-4">
+              <Link href="/signup">
+                <button className="font-retro border border-primary bg-primary px-6 py-2.5 text-xs uppercase tracking-widest text-primary-foreground transition-colors duration-200 hover:bg-primary/80">
+                  CREATE ACCOUNT
+                </button>
+              </Link>
+              <Link href="/login">
+                <button className="font-retro border border-border px-6 py-2.5 text-xs uppercase tracking-widest text-foreground transition-colors duration-200 hover:border-primary hover:text-primary">
+                  SIGN IN
+                </button>
+              </Link>
+            </div>
+          </ScrollReveal>
         </section>
 
+        {/* ── Footer ───────────────────────────────────── */}
         <footer className="border-t border-border py-8">
-          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-            <p>© 2026 Recon. All rights reserved.</p>
+          <div className="mx-auto max-w-6xl px-6 text-center">
+            <p className="font-retro text-xs tracking-widest text-muted-foreground">
+              &copy; 2026 RECON &mdash; ALL RIGHTS RESERVED
+            </p>
           </div>
         </footer>
       </div>

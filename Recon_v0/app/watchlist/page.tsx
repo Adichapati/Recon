@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { MovieGrid } from "@/components/movie-grid"
 import { MovieGridSkeleton } from "@/components/movie-skeleton"
 import { Button } from "@/components/ui/button"
-import { Trash2 } from "lucide-react"
 import { ProtectedLayout } from "@/components/protected-layout"
 import { toast } from "@/hooks/use-toast"
 import type { Movie } from "@/lib/mock-api"
@@ -83,7 +82,10 @@ export default function WatchlistPage() {
     return (
       <ProtectedLayout>
         <div className="container mx-auto px-4 py-12">
-          <h1 className="mb-8 text-4xl font-bold text-foreground">My Watchlist</h1>
+          <div className="mb-8">
+            <p className="font-retro text-[10px] uppercase tracking-[0.3em] text-primary/60">// WATCHLIST_MODULE</p>
+            <h1 className="font-retro mt-2 text-2xl font-bold uppercase tracking-wider text-foreground">My Queue</h1>
+          </div>
           <MovieGridSkeleton count={12} />
         </div>
       </ProtectedLayout>
@@ -93,38 +95,40 @@ export default function WatchlistPage() {
   return (
     <ProtectedLayout>
       <div className="container mx-auto px-4 py-12">
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-4xl font-bold text-foreground">
-            My Watchlist
-            {watchlist.length > 0 && (
-              <span className="ml-4 text-2xl font-normal text-muted-foreground">
-                ({watchlist.length} {watchlist.length === 1 ? "movie" : "movies"})
-              </span>
-            )}
-          </h1>
+        <div className="mb-8 flex items-end justify-between">
+          <div>
+            <p className="font-retro text-[10px] uppercase tracking-[0.3em] text-primary/60">// WATCHLIST_MODULE</p>
+            <h1 className="font-retro mt-2 text-2xl font-bold uppercase tracking-wider text-foreground">
+              My Queue
+              {watchlist.length > 0 && (
+                <span className="font-retro ml-4 text-sm font-normal text-muted-foreground">
+                  [{watchlist.length} {watchlist.length === 1 ? "ENTRY" : "ENTRIES"}]
+                </span>
+              )}
+            </h1>
+          </div>
           {watchlist.length > 0 && (
             <Button
               variant="outline"
               onClick={handleClearWatchlist}
-              className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              className="text-destructive hover:border-destructive hover:text-destructive"
             >
-              <Trash2 className="mr-2 size-4" />
-              Clear All
+              <span className="font-retro text-xs uppercase tracking-wider">CLEAR ALL</span>
             </Button>
           )}
         </div>
 
         {watchlist.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="mb-6 rounded-full bg-muted p-6">
-              <Trash2 className="size-12 text-muted-foreground" />
-            </div>
-            <h2 className="mb-4 text-2xl font-semibold text-foreground">Your watchlist is empty</h2>
-            <p className="mb-8 max-w-md text-muted-foreground">
-              Start adding movies to your watchlist and they'll appear here. You can add movies from the movie details page or directly from movie cards.
+            <div className="font-retro mb-4 text-4xl text-primary/20" aria-hidden="true">[ ]</div>
+            <h2 className="font-retro mb-2 text-sm uppercase tracking-wider text-foreground">Queue is empty</h2>
+            <p className="font-retro mb-8 max-w-md text-xs text-muted-foreground">
+              Start adding movies to your watchlist and they&apos;ll appear here. You can add movies from the movie details page or directly from movie cards.
             </p>
             <Button asChild>
-              <a href="/">Browse Movies</a>
+              <a href="/home">
+                <span className="font-retro text-xs uppercase tracking-wider">BROWSE MOVIES</span>
+              </a>
             </Button>
           </div>
         ) : (

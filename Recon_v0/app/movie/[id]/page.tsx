@@ -2,11 +2,9 @@
 
 import { useEffect, useState, use } from "react"
 import Image from "next/image"
-import { Star, Clock, Calendar, Plus, Check, Eye } from "lucide-react"
 import { ProtectedLayout } from "@/components/protected-layout"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { MovieGrid } from "@/components/movie-grid"
 import { MovieGridSkeleton } from "@/components/movie-skeleton"
 import { MovieDetailsSkeleton } from "@/components/movie-details-skeleton"
@@ -192,8 +190,8 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
   return (
     <ProtectedLayout>
       <div className="min-h-screen">
-        {/* Full-bleed (100vw) cinematic hero like the home banner */}
-        <section className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 overflow-hidden">
+        {/* Full-bleed cinematic hero */}
+        <section className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 overflow-hidden border-b border-border">
           <div className="relative aspect-video w-full max-h-[600px]">
             <Image
               src={movie.backdrop_path || "/placeholder.svg"}
@@ -204,36 +202,45 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
               quality={100}
               unoptimized
             />
-            {/* Smooth cinematic overlays */}
+            {/* Dark overlays */}
             <div className="absolute inset-0 bg-black/30" />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
 
+            {/* Scanline hint */}
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.03]"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)",
+              }}
+              aria-hidden="true"
+            />
+
             <div className="absolute inset-0 flex items-end">
               <div className="container mx-auto w-full px-6 pb-10 md:px-8">
                 <div className="flex flex-col gap-6 md:flex-row md:items-end">
-                  <div className="relative aspect-[2/3] w-44 shrink-0 overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10 md:w-52">
+                  {/* Poster */}
+                  <div className="relative aspect-[2/3] w-44 shrink-0 overflow-hidden border border-border md:w-52">
                     <Image src={movie.poster_path || "/placeholder.svg"} alt={movie.title} fill className="object-cover" quality={90} />
                   </div>
 
                   <div className="flex-1">
-                    <h1 className="mb-4 text-4xl font-bold text-white drop-shadow-lg md:text-5xl">{movie.title}</h1>
+                    {/* System label */}
+                    <p className="font-retro mb-2 text-[10px] uppercase tracking-[0.3em] text-primary/60">
+                      // MOVIE_DETAIL
+                    </p>
 
-                    <div className="mb-4 flex flex-wrap items-center gap-4 text-white/80">
-                      <div className="flex items-center gap-1">
-                        <Star className="size-5 fill-amber-400 text-amber-400" aria-hidden="true" />
-                        <span className="text-lg font-semibold text-white">{ratingText}</span>
-                        <span className="text-sm text-white/60">/10</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="size-4" aria-hidden="true" />
-                        <span>{releaseYear}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="size-4" aria-hidden="true" />
-                        <span>2h 15m</span>
-                      </div>
+                    <h1 className="font-retro mb-4 text-3xl font-bold uppercase tracking-wider text-foreground md:text-5xl">{movie.title}</h1>
+
+                    {/* Metadata row — text-driven */}
+                    <div className="font-retro mb-4 flex flex-wrap items-center gap-3 text-xs tracking-wider text-muted-foreground">
+                      <span className="text-primary tabular-nums">{ratingText}/10</span>
+                      <span className="text-border">|</span>
+                      <span>{releaseYear}</span>
+                      <span className="text-border">|</span>
+                      <span>2h 15m</span>
                     </div>
 
                     <div className="mb-6 flex flex-wrap gap-2">
@@ -250,17 +257,14 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
                         onClick={handleWatchlistToggle}
                         aria-label={`${isInWatchlistState ? "Remove" : "Add"} ${movie.title} to watchlist`}
                       >
-                        {isInWatchlistState ? (
-                          <Check className="mr-2 size-5" aria-hidden="true" />
-                        ) : (
-                          <Plus className="mr-2 size-5" aria-hidden="true" />
-                        )}
-                        {isInWatchlistState ? "Remove from Watchlist" : "Add to Watchlist"}
+                        <span className="font-retro text-xs uppercase tracking-wider">
+                          {isInWatchlistState ? "- REMOVE FROM QUEUE" : "+ ADD TO QUEUE"}
+                        </span>
                       </Button>
                       {isInWatchlistState && (
                         <Button
                           size="lg"
-                          variant="secondary"
+                          variant="outline"
                           onClick={() => {
                             markAsCompleted(movie.id).then((ok) => {
                               if (ok) {
@@ -280,8 +284,7 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
                           }}
                           aria-label={`Mark ${movie.title} as watched`}
                         >
-                          <Eye className="mr-2 size-5" aria-hidden="true" />
-                          Mark as Watched
+                          <span className="font-retro text-xs uppercase tracking-wider">MARK AS WATCHED</span>
                         </Button>
                       )}
                     </div>
@@ -293,15 +296,17 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
         </section>
 
         <div className="container mx-auto px-4 py-12">
+          {/* Overview section */}
           <div className="mb-12">
-            <h2 className="mb-4 text-2xl font-bold text-foreground">Overview</h2>
-            <p className="max-w-4xl text-lg leading-relaxed text-muted-foreground">{movie.overview}</p>
+            <h2 className="font-retro mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">&gt; Overview</h2>
+            <p className="max-w-4xl text-sm leading-relaxed text-muted-foreground">{movie.overview}</p>
           </div>
 
-          <Separator className="my-12" />
+          <div className="my-10 border-t border-border/20" />
 
-          <section className="mt-12">
-            <h2 className="mb-6 text-2xl font-bold text-foreground">Recommended for You</h2>
+          {/* Recommendations section */}
+          <section className="mt-10">
+            <h2 className="font-retro mb-6 text-sm font-semibold uppercase tracking-[0.2em] text-primary">&gt; Recommended for You</h2>
             {isLoadingRecommended ? (
               <MovieGridSkeleton count={14} />
             ) : recommendedError ? (
@@ -315,8 +320,8 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
               <MovieGrid movies={recommended} showReason={true} />
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <p className="mb-2 text-muted-foreground">No recommendations found</p>
-                <p className="text-sm text-muted-foreground">We couldn't find any similar movies at the moment.</p>
+                <p className="font-retro text-xs uppercase tracking-wider text-muted-foreground">No recommendations found</p>
+                <p className="font-retro mt-1 text-[10px] text-muted-foreground/50">We couldn&apos;t find any similar movies at the moment.</p>
               </div>
             )}
           </section>

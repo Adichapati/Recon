@@ -1,13 +1,17 @@
 import { Skeleton } from "@/components/ui/skeleton"
-import { Card } from "@/components/ui/card"
 
 export function MovieSkeleton({ variant = "default" }: { variant?: "default" | "large" }) {
   return (
-    <Card className={`overflow-hidden border-0 bg-neutral-900/50 ${variant === "large" ? "rounded-2xl" : "rounded-xl"}`}>
+    <div className="overflow-hidden rounded-sm border border-border bg-card">
       <div className="relative w-full aspect-[2/3]">
-        <Skeleton className="absolute inset-0 rounded-xl" />
+        <Skeleton className="absolute inset-0 rounded-none" />
+        {/* Retro line accents */}
+        <div className="absolute inset-x-3 bottom-3 space-y-2">
+          <Skeleton className="h-3 w-3/4 rounded-none" />
+          <Skeleton className="h-2 w-1/2 rounded-none" />
+        </div>
       </div>
-    </Card>
+    </div>
   )
 }
 

@@ -2,8 +2,6 @@
 // Shows placeholder UI while movie information loads
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { Card } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 
 export function MovieDetailsSkeleton() {
   return (
@@ -11,9 +9,9 @@ export function MovieDetailsSkeleton() {
       <div className="grid gap-8 lg:grid-cols-[300px,1fr]">
         {/* Poster skeleton */}
         <div className="mx-auto w-full max-w-[300px]">
-          <Card className="overflow-hidden border-0">
+          <div className="overflow-hidden border border-border">
             <Skeleton className="aspect-[2/3] w-full" />
-          </Card>
+          </div>
         </div>
 
         {/* Details skeleton */}
@@ -29,7 +27,7 @@ export function MovieDetailsSkeleton() {
             <Skeleton className="h-6 w-16" />
           </div>
 
-          <Separator />
+          <div className="border-t border-border/20" />
 
           <div className="space-y-2">
             <Skeleton className="h-5 w-24" />
@@ -38,7 +36,7 @@ export function MovieDetailsSkeleton() {
             <Skeleton className="h-4 w-3/4" />
           </div>
 
-          <Separator />
+          <div className="border-t border-border/20" />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Skeleton className="h-20 w-full" />
@@ -52,9 +50,9 @@ export function MovieDetailsSkeleton() {
         <Skeleton className="mb-6 h-8 w-48" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden border-0">
+            <div key={i} className="overflow-hidden border border-border">
               <Skeleton className="aspect-[2/3] w-full" />
-            </Card>
+            </div>
           ))}
         </div>
       </div>
