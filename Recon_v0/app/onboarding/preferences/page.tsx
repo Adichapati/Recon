@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 
 import { toast } from "@/hooks/use-toast"
-import { useTurnstile } from "@/hooks/use-turnstile"
 import { TypeReveal } from "@/components/retro/type-reveal"
 import { TerminalLine } from "@/components/retro/terminal-line"
 import { TerminalOptionGroup } from "@/components/retro/terminal-option"
@@ -146,7 +145,6 @@ const STEPS: StepConfig[] = [
 
 export default function OnboardingPreferencesPage() {
   const router = useRouter()
-  const { getToken } = useTurnstile()
   const [step, setStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [preferences, setPreferences] = useState<Preferences>({
@@ -217,11 +215,10 @@ export default function OnboardingPreferencesPage() {
     setIsSubmitting(true)
     setProcessing(true)
     try {
-      const turnstileToken = await getToken().catch(() => "")
       const res = await fetch("/api/preferences", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...preferences, completed: true, turnstileToken }),
+        body: JSON.stringify({ ...preferences, completed: true }),
       })
 
       if (!res.ok) {

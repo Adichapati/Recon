@@ -11,11 +11,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
-import { useTurnstile } from "@/hooks/use-turnstile"
 
 export default function SignupPage() {
   const router = useRouter()
-  const { getToken } = useTurnstile()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -44,11 +42,10 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      const turnstileToken = await getToken().catch(() => "")
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase(), password, turnstileToken }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase(), password }),
       })
 
       const data = await res.json()

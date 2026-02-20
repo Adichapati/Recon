@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { getSupabaseAdminClient } from "@/lib/supabase"
-import { verifyTurnstileToken } from "@/lib/turnstile"
 import type { Session } from "next-auth"
 
 export const runtime = "nodejs"
@@ -10,7 +9,6 @@ type WatchlistInsertBody = {
   id?: number
   title?: string
   poster_path?: string
-  turnstileToken?: string
 }
 
 async function resolveStableUserId(session: Session | null) {
@@ -118,12 +116,6 @@ export async function POST(req: Request) {
 
   const movie = (await req.json()) as WatchlistInsertBody
 
-  // Verify Turnstile CAPTCHA
-  const captcha = await verifyTurnstileToken(movie.turnstileToken)
-  if (!captcha.success) {
-    return NextResponse.json({ error: captcha.error }, { status: 403 })
-  }
-
   const movieId = Number(movie?.id)
   if (!Number.isFinite(movieId)) {
     return NextResponse.json({ error: "Invalid movie id" }, { status: 400 })
@@ -157,13 +149,7 @@ export async function PATCH(req: Request) {
 
   const { supabase, userId } = resolved
 
-  const body = (await req.json()) as { movieId?: number; status?: string; turnstileToken?: string }
-
-  // Verify Turnstile CAPTCHA
-  const captcha = await verifyTurnstileToken(body.turnstileToken)
-  if (!captcha.success) {
-    return NextResponse.json({ error: captcha.error }, { status: 403 })
-  }
+  const body = (await req.json()) as { movieId?: number; status?: string }
 
   const movieId = Number(body?.movieId)
   if (!Number.isFinite(movieId)) {
@@ -201,13 +187,7 @@ export async function DELETE(req: Request) {
 
   const { supabase, userId } = resolved
 
-  const body = (await req.json()) as { movieId?: number; turnstileToken?: string }
-
-  // Verify Turnstile CAPTCHA
-  const captcha = await verifyTurnstileToken(body.turnstileToken)
-  if (!captcha.success) {
-    return NextResponse.json({ error: captcha.error }, { status: 403 })
-  }
+  const body = (await req.json()) as { movieId?: number }
 
   const movieId = Number(body?.movieId)
   if (!Number.isFinite(movieId)) {

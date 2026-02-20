@@ -1,5 +1,4 @@
 import type { Movie } from "./mock-api"
-import { getTurnstileToken } from "./turnstile-client"
 
 type WatchlistRow = {
   user_id?: string
@@ -95,17 +94,12 @@ export async function getWatchlist(forceRefresh = false, status?: "watchlist" | 
 
 export async function addToWatchlist(movie: Movie): Promise<boolean> {
   try {
-    const turnstileToken = await getTurnstileToken().catch((err) => {
-      console.warn("[Watchlist] Turnstile token error:", err)
-      return ""
-    })
     await fetchJson("/api/watchlist", {
       method: "POST",
       body: JSON.stringify({
         id: movie.id,
         title: movie.title,
         poster_path: movie.poster_path,
-        turnstileToken,
       }),
     })
 
@@ -119,13 +113,9 @@ export async function addToWatchlist(movie: Movie): Promise<boolean> {
 
 export async function removeFromWatchlist(movieId: number): Promise<boolean> {
   try {
-    const turnstileToken = await getTurnstileToken().catch((err) => {
-      console.warn("[Watchlist] Turnstile token error:", err)
-      return ""
-    })
     await fetchJson("/api/watchlist", {
       method: "DELETE",
-      body: JSON.stringify({ movieId, turnstileToken }),
+      body: JSON.stringify({ movieId }),
     })
 
     await getWatchlist(true)
@@ -148,13 +138,9 @@ export async function isInWatchlist(movieId: number): Promise<boolean> {
 
 export async function markAsCompleted(movieId: number): Promise<boolean> {
   try {
-    const turnstileToken = await getTurnstileToken().catch((err) => {
-      console.warn("[Watchlist] Turnstile token error:", err)
-      return ""
-    })
     await fetchJson("/api/watchlist", {
       method: "PATCH",
-      body: JSON.stringify({ movieId, status: "completed", turnstileToken }),
+      body: JSON.stringify({ movieId, status: "completed" }),
     })
 
     clearWatchlistCache()
@@ -167,13 +153,9 @@ export async function markAsCompleted(movieId: number): Promise<boolean> {
 
 export async function markAsWatchlist(movieId: number): Promise<boolean> {
   try {
-    const turnstileToken = await getTurnstileToken().catch((err) => {
-      console.warn("[Watchlist] Turnstile token error:", err)
-      return ""
-    })
     await fetchJson("/api/watchlist", {
       method: "PATCH",
-      body: JSON.stringify({ movieId, status: "watchlist", turnstileToken }),
+      body: JSON.stringify({ movieId, status: "watchlist" }),
     })
 
     clearWatchlistCache()
