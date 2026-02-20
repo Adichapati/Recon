@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { getSupabaseAdminClient } from "@/lib/supabase"
+import { verifyTurnstileToken } from "@/lib/turnstile"
 import type { Session } from "next-auth"
 
 export const runtime = "nodejs"
@@ -12,6 +13,7 @@ type UserPreferences = {
   pacing?: string
   popularity?: string
   completed?: boolean
+  turnstileToken?: string
 }
 
 async function resolveStableUserId(session: Session | null) {
@@ -112,6 +114,12 @@ export async function POST(req: Request) {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+  }
+
+  // Verify Turnstile CAPTCHA
+  const captcha = await verifyTurnstileToken(body.turnstileToken)
+  if (!captcha.success) {
+    return NextResponse.json({ error: captcha.error }, { status: 403 })
   }
 
   // Validate and sanitize input
