@@ -3,6 +3,7 @@ import crypto from "node:crypto"
 
 import { getSupabaseAdminClient } from "@/lib/supabase"
 import { hashPassword } from "@/lib/password"
+import { verifyTurnstileToken } from "@/lib/turnstile"
 
 export const runtime = "nodejs"
 
@@ -10,6 +11,7 @@ type SignupBody = {
   name?: string
   email?: string
   password?: string
+  turnstileToken?: string
 }
 
 export async function POST(req: Request) {
@@ -18,6 +20,12 @@ export async function POST(req: Request) {
     body = (await req.json()) as SignupBody
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+  }
+
+  // Verify Turnstile CAPTCHA
+  const captcha = await verifyTurnstileToken(body.turnstileToken)
+  if (!captcha.success) {
+    return NextResponse.json({ error: captcha.error }, { status: 403 })
   }
 
   const name = typeof body?.name === "string" ? body.name.trim() : ""
