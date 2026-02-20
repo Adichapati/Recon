@@ -77,8 +77,8 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Centered search bar — hidden on /search since that page has its own */}
-        {isAuthenticated && pathname !== "/search" && (
+        {/* Centered search bar */}
+        {isAuthenticated && (
           <form onSubmit={handleSearch} className="hidden flex-1 justify-center md:flex">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
