@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Recon — Movie Detector",
+  "version": "0.2.0",
+  "description": "Detects movies playing on Netflix and Prime Video and surfaces them to your Recon watchlist.",
+
+  "permissions": ["activeTab", "scripting", "storage", "notifications"],
+
+  "host_permissions": [
+    "<all_urls>",
+    "https://www.sprake.lol/*",
+    "https://sprake.lol/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Recon"
+  },
+
+  "icons": {}
+}

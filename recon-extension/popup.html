@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=360" />
+  <title>Recon</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <!-- ── Header ────────────────────────────────────── -->
+  <header id="header">
+    <span class="logo">[R]</span>
+    <span class="title">RECON</span>
+    <span class="version">v0.3</span>
+    <button id="btn-settings" class="btn-icon" title="Settings">⚙</button>
+  </header>
+
+  <!-- ── Terminal output area ──────────────────────── -->
+  <main id="terminal">
+    <div id="status-line" class="line dim">
+      &gt; scanning active tab…
+    </div>
+
+    <div id="detected" class="hidden">
+      <div class="line dim">──────────────────────────────</div>
+      <div class="line">
+        <span class="label">TITLE:</span>
+        <span id="movie-title" class="value">—</span>
+      </div>
+      <div class="line">
+        <span class="label">SOURCE:</span>
+        <span id="movie-source" class="value badge">—</span>
+      </div>
+      <div class="line dim">──────────────────────────────</div>
+    </div>
+  </main>
+
+  <!-- ── Action buttons ───────────────────────────── -->
+  <footer id="actions" class="hidden">
+    <button id="btn-watchlist" class="btn" data-action="watchlist">
+      + Add to Watchlist
+    </button>
+    <button id="btn-completed" class="btn" data-action="completed">
+      ✓ Mark Completed
+    </button>
+    <button id="btn-ignore" class="btn btn--dim" data-action="ignore">
+      ✕ Ignore
+    </button>
+  </footer>
+
+  <!-- ── Settings panel ───────────────────────────── -->
+  <div id="settings" class="hidden">
+    <div class="line dim">──────────────────────────────</div>
+    <div class="line">
+      <span class="label">API TOKEN</span>
+    </div>
+    <div class="line dim" style="font-size: 9px; margin-bottom: 4px;">
+      Generate at sprake.lol → Profile
+    </div>
+    <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+      <input id="token-input" type="password" placeholder="recon_..." class="token-input" autocomplete="off" />
+      <button id="btn-save-token" class="btn btn--small">SAVE</button>
+    </div>
+    <div id="token-status" class="line dim"></div>
+    <div class="line dim" style="margin-top: 8px;">──────────────────────────────</div>
+    <button id="btn-back" class="btn btn--dim" style="margin-top: 4px;">← Back</button>
+  </div>
+
+  <!-- ── Log line (action feedback) ───────────────── -->
+  <div id="log" class="hidden line dim"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

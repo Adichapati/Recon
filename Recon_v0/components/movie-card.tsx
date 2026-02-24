@@ -150,10 +150,12 @@ export function MovieCard({ movie, showReason = false, variant = "default", inde
             </div>
 
             {/* Rating badge — monospace, top left */}
+            {movie.vote_average > 0 && (
             <div className="font-retro absolute top-2 left-2 flex items-center gap-1 border border-border/50 bg-black/60 px-2 py-1 text-[10px] tracking-wider text-primary backdrop-blur-sm">
               <Star className="size-3 fill-primary text-primary" />
               <span>{movie.vote_average.toFixed(1)}</span>
             </div>
+            )}
 
             {/* Bottom content */}
             <div className="absolute inset-x-0 bottom-0 p-3 pb-2">

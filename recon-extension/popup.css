@@ -1,0 +1,239 @@
+/* ── Recon Extension — Popup Styles ──────────────────────
+   Terminal-retro aesthetic matching the main Recon app.
+   near-black bg · muted yellow text · monospace font
+   ──────────────────────────────────────────────────────── */
+
+:root {
+  --bg:        #0b0b0b;
+  --bg-card:   #111111;
+  --border:    #222222;
+  --primary:   #c8a832;
+  --fg:        #d4d0c8;
+  --dim:       #666660;
+  --font-mono: "Geist Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 340px;
+  min-height: 200px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+
+#header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.logo {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.15em;
+}
+
+.title {
+  color: var(--fg);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.version {
+  color: var(--dim);
+  font-size: 10px;
+}
+
+.btn-icon {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+.btn-icon:hover {
+  color: var(--primary);
+}
+
+/* ── Terminal lines ─────────────────────────────────── */
+
+.line {
+  padding: 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.line.dim {
+  color: var(--dim);
+}
+
+.label {
+  color: var(--primary);
+  margin-right: 6px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.value {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.badge {
+  display: inline-block;
+  background: var(--border);
+  color: var(--primary);
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Actions ────────────────────────────────────────── */
+
+#actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn:hover {
+  background: var(--border);
+  border-color: var(--primary);
+}
+
+.btn:active {
+  background: #1a1a18;
+}
+
+.btn--dim {
+  color: var(--dim);
+}
+
+.btn--dim:hover {
+  color: var(--fg);
+}
+
+/* ── Log feedback ───────────────────────────────────── */
+
+#log {
+  margin-top: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--dim);
+}
+
+/* ── Settings Panel ─────────────────────────────────── */
+
+#settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+#settings label {
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.token-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 11px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.token-input:focus {
+  border-color: var(--primary);
+}
+
+.token-input::placeholder {
+  color: var(--dim);
+}
+
+.btn--small {
+  display: inline-block;
+  width: auto;
+  padding: 4px 14px;
+  font-size: 11px;
+}
+
+#token-status {
+  font-size: 10px;
+  min-height: 14px;
+}
+
+.token-saved {
+  color: #4caf50;
+}
+
+.token-error {
+  color: #f44336;
+}
+
+/* ── Utility ────────────────────────────────────────── */
+
+.hidden {
+  display: none !important;
+}
+
+/* Blinking cursor after status line */
+#status-line::after {
+  content: "█";
+  animation: blink 1s step-end infinite;
+  color: var(--primary);
+  margin-left: 4px;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}

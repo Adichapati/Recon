@@ -1,9 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { useState } from "react"
-import { Film, Search, User, Menu, LogOut, Heart, CheckCircle } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { Film, User, Menu, LogOut, Heart, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -19,19 +18,10 @@ import { clearWatchlistCache } from "@/lib/watchlist"
 
 export function Navbar() {
   const pathname = usePathname()
-  const router = useRouter()
   const { data: session } = useSession()
-  const [searchQuery, setSearchQuery] = useState("")
 
   const isAuthenticated = !!session
   const user = session?.user
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
-    }
-  }
 
   const navLinks = isAuthenticated
     ? [
@@ -76,22 +66,6 @@ export function Navbar() {
             </div>
           )}
         </div>
-
-        {/* Centered search bar */}
-        {isAuthenticated && (
-          <form onSubmit={handleSearch} className="hidden flex-1 justify-center md:flex">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-              <input
-                type="text"
-                placeholder="SEARCH TITLES..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-sm border border-border bg-card py-1.5 pl-9 pr-3 font-retro text-xs tracking-wider placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none"
-              />
-            </div>
-          </form>
-        )}
 
         {/* Right-side actions */}
         <div className="flex items-center gap-2">

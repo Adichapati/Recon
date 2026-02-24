@@ -81,6 +81,12 @@ export default function ProfilePage() {
   const [topGenres, setTopGenres] = useState<GenreStats[]>([])
   const [isLoadingWatchlist, setIsLoadingWatchlist] = useState(true)
 
+  // Extension token state
+  const [extToken, setExtToken] = useState<string | null>(null)
+  const [hasExtToken, setHasExtToken] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [tokenCopied, setTokenCopied] = useState(false)
+
   // Viewing Insights state
   const [completedCount, setCompletedCount] = useState(0)
   const [completedTopGenres, setCompletedTopGenres] = useState<GenreStats[]>([])
@@ -173,6 +179,52 @@ export default function ProfilePage() {
       cancelled = true
     }
   }, [])
+
+  // Check if extension token exists
+  useEffect(() => {
+    fetch("/api/extension/token")
+      .then((r) => r.json())
+      .then((d) => setHasExtToken(!!d?.hasToken))
+      .catch(() => {})
+  }, [])
+
+  const handleGenerateToken = async () => {
+    setIsGenerating(true)
+    try {
+      const res = await fetch("/api/extension/token", { method: "POST" })
+      const data = await res.json()
+      if (data.token) {
+        setExtToken(data.token)
+        setHasExtToken(true)
+        toast({ title: "Token generated", description: "Copy it and paste it into the Recon extension." })
+      } else {
+        toast({ title: "Error", description: data.error || "Failed to generate token.", variant: "destructive" })
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to generate token.", variant: "destructive" })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleRevokeToken = async () => {
+    try {
+      await fetch("/api/extension/token", { method: "DELETE" })
+      setExtToken(null)
+      setHasExtToken(false)
+      toast({ title: "Token revoked", description: "The extension will no longer sync." })
+    } catch {
+      toast({ title: "Error", description: "Failed to revoke token.", variant: "destructive" })
+    }
+  }
+
+  const handleCopyToken = () => {
+    if (extToken) {
+      navigator.clipboard.writeText(extToken)
+      setTokenCopied(true)
+      setTimeout(() => setTokenCopied(false), 2000)
+    }
+  }
 
   const recentItems = useMemo(() => {
     return [...watchlistItems]
@@ -331,6 +383,91 @@ export default function ProfilePage() {
                 </p>
               </div>
             )}
+          </section>
+
+          <div className="my-6 border-t border-border/20" />
+
+          {/* ── Chrome Extension ────────────────────────── */}
+          <section className="mb-8">
+            <h2 className="font-retro mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-primary">&gt; Recon Chrome Extension</h2>
+            <p className="font-retro mb-4 text-xs text-muted-foreground">
+              The Recon extension automatically detects movies you watch on Netflix, Prime Video, and other streaming sites — then syncs them to your watchlist here.
+            </p>
+
+            {/* How it works */}
+            <div className="mb-5 border border-border bg-card/30 p-4 space-y-2">
+              <p className="font-retro text-[10px] font-semibold uppercase tracking-wider text-primary/80">How it works</p>
+              <ul className="font-retro list-none space-y-1 text-xs text-muted-foreground">
+                <li>▸ Detects video playback on any streaming site</li>
+                <li>▸ Extracts the movie title from the page</li>
+                <li>▸ Matches it against TMDB and adds it to your Recon queue</li>
+                <li>▸ Mark movies as &quot;Watchlist&quot;, &quot;Completed&quot;, or &quot;Ignore&quot; from the popup</li>
+              </ul>
+            </div>
+
+            {/* Install steps */}
+            <div className="mb-5 border border-border bg-card/30 p-4 space-y-2">
+              <p className="font-retro text-[10px] font-semibold uppercase tracking-wider text-primary/80">Install</p>
+              <ol className="font-retro list-none space-y-1.5 text-xs text-muted-foreground">
+                <li><span className="text-primary/60 mr-1.5">1.</span>Download or clone the <code className="bg-muted px-1 py-0.5 text-foreground">recon-extension</code> folder — <a href="https://github.com/Adichapati/Recon_ext" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">click here</a> to open the GitHub repo</li>
+                <li><span className="text-primary/60 mr-1.5">2.</span>Open <code className="bg-muted px-1 py-0.5 text-foreground">chrome://extensions</code> in Chrome</li>
+                <li><span className="text-primary/60 mr-1.5">3.</span>Enable <strong className="text-foreground">Developer mode</strong> (top-right toggle)</li>
+                <li><span className="text-primary/60 mr-1.5">4.</span>Click <strong className="text-foreground">Load unpacked</strong> and select the <code className="bg-muted px-1 py-0.5 text-foreground">recon-extension</code> folder</li>
+              </ol>
+            </div>
+
+            {/* Setup / connect steps */}
+            <div className="mb-5 border border-border bg-card/30 p-4 space-y-2">
+              <p className="font-retro text-[10px] font-semibold uppercase tracking-wider text-primary/80">Connect</p>
+              <ol className="font-retro list-none space-y-1.5 text-xs text-muted-foreground">
+                <li><span className="text-primary/60 mr-1.5">1.</span>Generate an API token below</li>
+                <li><span className="text-primary/60 mr-1.5">2.</span>Click the Recon extension icon in your toolbar</li>
+                <li><span className="text-primary/60 mr-1.5">3.</span>Click the <strong className="text-foreground">⚙</strong> gear icon in the popup header</li>
+                <li><span className="text-primary/60 mr-1.5">4.</span>Paste your token and hit <strong className="text-foreground">Save</strong></li>
+                <li><span className="text-primary/60 mr-1.5">5.</span>Start watching — detections sync automatically</li>
+              </ol>
+            </div>
+
+            {/* Token management */}
+            <div className="border border-border bg-card/30 p-4 space-y-3">
+              <p className="font-retro text-[10px] font-semibold uppercase tracking-wider text-primary/80">API Token</p>
+
+              {extToken ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 border border-border bg-background p-3">
+                    <code className="font-retro flex-1 truncate text-xs text-foreground select-all">{extToken}</code>
+                    <Button variant="outline" size="sm" onClick={handleCopyToken}>
+                      <span className="font-retro text-[10px] uppercase tracking-wider">
+                        {tokenCopied ? "COPIED!" : "COPY"}
+                      </span>
+                    </Button>
+                  </div>
+                  <p className="font-retro text-[10px] text-muted-foreground/60">
+                    ⚠ This token is shown only once. Copy it now.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <Button variant="outline" onClick={handleGenerateToken} disabled={isGenerating}>
+                      <span className="font-retro text-[10px] uppercase tracking-wider">
+                        {isGenerating ? "GENERATING..." : hasExtToken ? "REGENERATE TOKEN" : "GENERATE TOKEN"}
+                      </span>
+                    </Button>
+                    {hasExtToken && (
+                      <Button variant="outline" onClick={handleRevokeToken}>
+                        <span className="font-retro text-[10px] uppercase tracking-wider text-red-400">REVOKE</span>
+                      </Button>
+                    )}
+                  </div>
+                  {hasExtToken && (
+                    <p className="font-retro text-[10px] text-muted-foreground/60">
+                      A token is active. Regenerate to get a new one (the old token will stop working).
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </section>
 
           <div className="my-6 border-t border-border/20" />
