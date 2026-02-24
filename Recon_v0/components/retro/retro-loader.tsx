@@ -11,10 +11,9 @@ interface RetroLoaderProps {
 }
 
 /**
- * Machine-like loading indicator.
- * Replaces spinners with a blinking block cursor and a slowly filling
- * dotted progress bar — feels like "system thinking".
- * Respects prefers-reduced-motion.
+ * Cassette-tape loading indicator.
+ * A decorative cassette with spinning reels, plus a dotted progress bar
+ * and blinking cursor. Respects prefers-reduced-motion.
  */
 export function RetroLoader({
   label = "LOADING",
@@ -38,6 +37,96 @@ export function RetroLoader({
 
   return (
     <div className={`flex flex-col items-center justify-center gap-4 py-16 ${className}`}>
+
+      {/* ── Cassette tape visual ── */}
+      <div
+        className="relative flex items-center justify-center"
+        style={{ width: 120, height: 68 }}
+        aria-hidden="true"
+      >
+        {/* Tape body */}
+        <div
+          className="absolute inset-0 rounded-sm border border-border/40 bg-card/60"
+          style={{ boxShadow: "inset 0 0 12px rgba(74,191,173,0.05)" }}
+        />
+
+        {/* Window (transparent tape window) */}
+        <div
+          className="absolute left-1/2 top-2 -translate-x-1/2 rounded-sm border border-border/30 bg-black/40"
+          style={{ width: 70, height: 24 }}
+        />
+
+        {/* Left reel */}
+        <motion.div
+          className="absolute rounded-full border border-primary/30"
+          style={{
+            width: 20, height: 20,
+            left: 30, top: 6,
+            background: "radial-gradient(circle, rgba(74,191,173,0.2) 0%, transparent 70%)",
+          }}
+          {...(prefersReduced
+            ? {}
+            : {
+                animate: { rotate: 360 },
+                transition: { duration: 2, repeat: Infinity, ease: "linear" },
+              })}
+        >
+          {/* Reel spokes */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-full w-px bg-primary/20" />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-px w-full bg-primary/20" />
+          </div>
+          {/* Center dot */}
+          <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/30" />
+        </motion.div>
+
+        {/* Right reel */}
+        <motion.div
+          className="absolute rounded-full border border-primary/30"
+          style={{
+            width: 20, height: 20,
+            right: 30, top: 6,
+            background: "radial-gradient(circle, rgba(74,191,173,0.2) 0%, transparent 70%)",
+          }}
+          {...(prefersReduced
+            ? {}
+            : {
+                animate: { rotate: -360 },
+                transition: { duration: 3, repeat: Infinity, ease: "linear" },
+              })}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-full w-px bg-primary/20" />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-px w-full bg-primary/20" />
+          </div>
+          <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/30" />
+        </motion.div>
+
+        {/* Tape path line between reels */}
+        <div
+          className="absolute"
+          style={{
+            left: 41, right: 41, top: 15, height: 1,
+            background: "linear-gradient(90deg, rgba(200,168,50,0.3), rgba(74,191,173,0.3))",
+          }}
+        />
+
+        {/* Label area */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
+          <div className="font-retro text-[6px] uppercase tracking-[0.15em] text-primary/30">
+            RECON MIX
+          </div>
+        </div>
+
+        {/* Bottom screw holes */}
+        <div className="absolute bottom-1.5 left-3 h-1 w-1 rounded-full border border-border/20" />
+        <div className="absolute bottom-1.5 right-3 h-1 w-1 rounded-full border border-border/20" />
+      </div>
+
       {/* Dotted progress line */}
       <div className="flex gap-1" role="status" aria-label={label}>
         {Array.from({ length: 8 }).map((_, i) => (

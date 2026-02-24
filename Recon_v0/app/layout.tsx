@@ -5,6 +5,8 @@ import { Analytics } from "@vercel/analytics/next"
 import { Providers } from "./providers"
 import { Toaster } from "@/components/ui/toaster"
 import { ScanlineOverlay } from "@/components/retro"
+import { AmbientParticlesLoader } from "@/components/retro/ambient-particles-loader"
+import { CrtTransition } from "@/components/retro/crt-transition"
 import "./globals.css"
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-sans" })
@@ -24,6 +26,8 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <Providers>
+          <AmbientParticlesLoader />
+          <CrtTransition />
           <ScanlineOverlay opacity={0.025} noise />
           {children}
           <Toaster />

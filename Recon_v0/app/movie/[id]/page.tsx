@@ -221,9 +221,39 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
             <div className="absolute inset-0 flex items-end">
               <div className="container mx-auto w-full px-6 pb-10 md:px-8">
                 <div className="flex flex-col gap-6 md:flex-row md:items-end">
-                  {/* Poster */}
-                  <div className="relative aspect-[2/3] w-44 shrink-0 overflow-hidden border border-border md:w-52">
-                    <Image src={movie.poster_path || "/placeholder.svg"} alt={movie.title} fill className="object-cover" quality={90} />
+                  {/* Poster — retro CRT frame */}
+                  <div className="group/poster relative shrink-0">
+                    {/* Corner brackets */}
+                    <div className="pointer-events-none absolute -inset-2 z-10">
+                      <div className="absolute left-0 top-0 h-4 w-4 border-l border-t border-primary/40" />
+                      <div className="absolute right-0 top-0 h-4 w-4 border-r border-t border-primary/40" />
+                      <div className="absolute bottom-0 left-0 h-4 w-4 border-b border-l border-primary/40" />
+                      <div className="absolute bottom-0 right-0 h-4 w-4 border-b border-r border-primary/40" />
+                    </div>
+                    {/* Glow effect */}
+                    <div
+                      className="pointer-events-none absolute -inset-1 z-0 opacity-40"
+                      style={{
+                        boxShadow: "0 0 30px 2px rgba(74,191,173,0.15), inset 0 0 30px 2px rgba(74,191,173,0.05)",
+                      }}
+                    />
+                    {/* NOW PLAYING label */}
+                    <div className="font-retro absolute -top-5 left-0 z-20 text-[8px] uppercase tracking-[0.3em] text-primary/50">
+                      ▸ NOW PLAYING
+                    </div>
+                    {/* Poster image */}
+                    <div className="relative aspect-[2/3] w-44 overflow-hidden border border-border md:w-52">
+                      <Image src={movie.poster_path || "/placeholder.svg"} alt={movie.title} fill className="object-cover" quality={90} />
+                      {/* CRT scanline overlay on poster */}
+                      <div
+                        className="pointer-events-none absolute inset-0 z-10"
+                        style={{
+                          backgroundImage:
+                            "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(74,191,173,0.04) 2px, rgba(74,191,173,0.04) 4px)",
+                          backgroundSize: "100% 4px",
+                        }}
+                      />
+                    </div>
                   </div>
 
                   <div className="flex-1">

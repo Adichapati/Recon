@@ -12,6 +12,7 @@ import { clearWatchlistCache, getWatchlist } from "@/lib/watchlist"
 import type { WatchlistItem } from "@/lib/watchlist"
 import { signOut, useSession } from "next-auth/react"
 import { extractGenreNames } from "@/lib/genres"
+import { GenreRadarLoader } from "@/components/retro/genre-radar-loader"
 
 type GenreStats = { name: string; count: number }
 
@@ -451,12 +452,15 @@ export default function ProfilePage() {
             ) : topGenres.length === 0 ? (
               <p className="font-retro text-xs text-muted-foreground">Add more movies to your queue to see genre insights.</p>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {topGenres.map((g) => (
-                  <Badge key={g.name} variant="secondary">
-                    {g.name}
-                  </Badge>
-                ))}
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {topGenres.map((g) => (
+                    <Badge key={g.name} variant="secondary">
+                      {g.name}
+                    </Badge>
+                  ))}
+                </div>
+                <GenreRadarLoader genres={topGenres} />
               </div>
             )}
           </section>

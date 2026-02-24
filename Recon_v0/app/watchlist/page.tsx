@@ -95,27 +95,49 @@ export default function WatchlistPage() {
   return (
     <ProtectedLayout>
       <div className="container mx-auto px-4 py-12">
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <p className="font-retro text-[10px] uppercase tracking-[0.3em] text-primary/60">// WATCHLIST_MODULE</p>
-            <h1 className="font-retro mt-2 text-2xl font-bold uppercase tracking-wider text-foreground">
-              My Queue
+        {/* VHS-style tape header */}
+        <div className="relative mb-10 overflow-hidden border border-border/30 bg-card/50 px-6 py-5">
+          {/* Left colour stripe (VHS side label) */}
+          <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-primary/80 via-primary/40 to-primary/80" />
+          {/* Right colour stripe */}
+          <div className="absolute inset-y-0 right-0 w-1.5 bg-gradient-to-b from-primary/60 via-primary/20 to-primary/60" />
+
+          <div className="flex items-end justify-between">
+            <div className="pl-4">
+              <p className="font-retro text-[10px] uppercase tracking-[0.3em] text-primary/60">// WATCHLIST_MODULE</p>
+              <h1 className="font-retro mt-2 text-2xl font-bold uppercase tracking-wider text-foreground">
+                My Queue
+                {watchlist.length > 0 && (
+                  <span className="font-retro ml-4 text-sm font-normal text-muted-foreground">
+                    [{watchlist.length} {watchlist.length === 1 ? "ENTRY" : "ENTRIES"}]
+                  </span>
+                )}
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-4">
+              {/* Decorative tape counter */}
+              <div className="font-retro hidden items-center gap-2 text-[10px] tracking-wider text-muted-foreground/50 sm:flex">
+                <span className="inline-block h-3 w-3 rounded-full border border-primary/30" />
+                <span>REC</span>
+                <span className="tabular-nums text-primary/40">{String(watchlist.length).padStart(4, "0")}</span>
+                <span className="inline-block h-3 w-3 rounded-full border border-primary/30" />
+              </div>
+
               {watchlist.length > 0 && (
-                <span className="font-retro ml-4 text-sm font-normal text-muted-foreground">
-                  [{watchlist.length} {watchlist.length === 1 ? "ENTRY" : "ENTRIES"}]
-                </span>
+                <Button
+                  variant="outline"
+                  onClick={handleClearWatchlist}
+                  className="text-destructive hover:border-destructive hover:text-destructive"
+                >
+                  <span className="font-retro text-xs uppercase tracking-wider">CLEAR ALL</span>
+                </Button>
               )}
-            </h1>
+            </div>
           </div>
-          {watchlist.length > 0 && (
-            <Button
-              variant="outline"
-              onClick={handleClearWatchlist}
-              className="text-destructive hover:border-destructive hover:text-destructive"
-            >
-              <span className="font-retro text-xs uppercase tracking-wider">CLEAR ALL</span>
-            </Button>
-          )}
+
+          {/* Bottom tape stripe (thin scanline accent) */}
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
         </div>
 
         {watchlist.length === 0 ? (

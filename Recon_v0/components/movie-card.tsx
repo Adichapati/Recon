@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Star, Plus, Check, Bookmark, Eye } from "lucide-react"
@@ -63,13 +63,42 @@ export function MovieCard({ movie, showReason = false, variant = "default", inde
 
   const isLarge = variant === "large"
 
+  /* ── 3D tilt on hover ── */
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0, glowX: 50, glowY: 50 })
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const el = cardRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width   // 0‥1
+    const y = (e.clientY - rect.top) / rect.height    // 0‥1
+    setTilt({
+      rotateX: (y - 0.5) * -12,  // ±6°
+      rotateY: (x - 0.5) * 12,   // ±6°
+      glowX: x * 100,
+      glowY: y * 100,
+    })
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false)
+    setTilt({ rotateX: 0, rotateY: 0, glowX: 50, glowY: 50 })
+  }, [])
+
   return (
     <Link href={`/movie/${movie.id}`}>
       {/* Outer wrapper — float up on hover like a file lifting from a drawer */}
       <motion.div
+        ref={cardRef}
         className="group relative"
+        style={{
+          perspective: "600px",
+          transformStyle: "preserve-3d" as const,
+        }}
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
         initial={{ opacity: 0, y: 18 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
@@ -103,10 +132,26 @@ export function MovieCard({ movie, showReason = false, variant = "default", inde
         />
 
         <div
-          className={`relative overflow-hidden border border-border bg-card transition-colors duration-200 ${
+          className={`relative overflow-hidden border border-border bg-card transition-all duration-200 ease-out ${
             isLarge ? "rounded-sm" : "rounded-sm"
           } ${isHovered ? "border-primary/40" : ""}`}
+          style={{
+            transform: isHovered
+              ? `rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg) scale(1.02)`
+              : "rotateX(0deg) rotateY(0deg) scale(1)",
+            transition: isHovered ? "transform 0.1s ease-out" : "transform 0.4s ease-out",
+            transformStyle: "preserve-3d",
+          }}
         >
+          {/* Tilt glow — follows cursor */}
+          {isHovered && (
+            <div
+              className="pointer-events-none absolute inset-0 z-20"
+              style={{
+                background: `radial-gradient(circle at ${tilt.glowX}% ${tilt.glowY}%, rgba(74,191,173,0.15) 0%, transparent 60%)`,
+              }}
+            />
+          )}
           {/* Poster image container */}
           <div className="relative w-full aspect-[2/3]">
             <Image

@@ -1,6 +1,7 @@
 export { TypeReveal } from "./type-reveal"
 export { FocusFrame } from "./focus-frame"
 export { ScanlineOverlay } from "./scanline-overlay"
+export { AmbientParticles } from "./ambient-particles"
 export { RetroLoader } from "./retro-loader"
 export { TerminalLine } from "./terminal-line"
 export { BlinkingCursor } from "./blinking-cursor"

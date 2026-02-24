@@ -1,9 +1,15 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
 import { TypeReveal } from "./type-reveal"
+
+const HeroRobotCanvas = dynamic(
+  () => import("./hero-robot-canvas").then((m) => m.HeroRobotCanvas),
+  { ssr: false }
+)
 
 /**
  * Full-width hero section with a retro-futuristic terminal aesthetic.
@@ -47,6 +53,9 @@ export function LandingHero() {
 
       {/* ── Content ──────────────────────────────────── */}
       <div className="relative mx-auto w-full max-w-6xl px-6 py-24 md:py-32">
+        <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
+          {/* Left column — text content */}
+          <div>
         {/* System label */}
         <motion.p
           className="font-retro mb-6 text-[10px] uppercase tracking-[0.4em] text-muted-foreground md:text-xs"
@@ -93,6 +102,18 @@ export function LandingHero() {
             </button>
           </Link>
         </motion.div>
+          </div>
+
+          {/* Right column — 3D Robot */}
+          <motion.div
+            className="hidden h-[420px] lg:block xl:h-[500px]"
+            initial={prefersReduced ? undefined : { opacity: 0 }}
+            animate={headingDone ? { opacity: 1 } : {}}
+            transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" as const }}
+          >
+            <HeroRobotCanvas />
+          </motion.div>
+        </div>
 
         {/* Bottom metadata strip */}
         <motion.div
