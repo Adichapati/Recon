@@ -72,15 +72,17 @@ export default function LandingPage() {
               START BUILDING YOUR TASTE PROFILE
             </h2>
             <div className="mt-2 flex gap-4">
-              <Link href="/signup">
-                <button className="font-retro border border-primary bg-primary px-6 py-2.5 text-xs uppercase tracking-widest text-primary-foreground transition-colors duration-200 hover:bg-primary/80">
-                  CREATE ACCOUNT
-                </button>
+              <Link
+                href="/signup"
+                className="font-retro border border-primary bg-primary px-6 py-2.5 text-xs uppercase tracking-widest text-primary-foreground transition-colors duration-200 hover:bg-primary/80"
+              >
+                CREATE ACCOUNT
               </Link>
-              <Link href="/login">
-                <button className="font-retro border border-border px-6 py-2.5 text-xs uppercase tracking-widest text-foreground transition-colors duration-200 hover:border-primary hover:text-primary">
-                  SIGN IN
-                </button>
+              <Link
+                href="/login"
+                className="font-retro border border-border px-6 py-2.5 text-xs uppercase tracking-widest text-foreground transition-colors duration-200 hover:border-primary hover:text-primary"
+              >
+                SIGN IN
               </Link>
             </div>
           </ScrollReveal>

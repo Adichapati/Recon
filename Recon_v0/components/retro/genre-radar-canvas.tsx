@@ -277,7 +277,7 @@ export function GenreRadarCanvas({ genres }: GenreRadarCanvasProps) {
         camera={{ position: [0, 0, 5], fov: 40 }}
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true }}
-        style={{ background: "transparent" }}
+        style={{ background: "transparent", pointerEvents: "none" }}
       >
         <ambientLight intensity={0.3} />
         <pointLight position={[3, 3, 5]} intensity={0.5} color={TEAL} />

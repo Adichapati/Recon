@@ -139,7 +139,7 @@ export default function HomeContent() {
         {/* ── Banner carousel ──────────────────────────── */}
         {!isLoadingPopular && !popularError && bannerMovie && (
           <section
-            className="relative left-1/2 right-1/2 mb-10 w-screen -translate-x-1/2 overflow-hidden border-b border-border"
+            className="relative mb-10 w-full overflow-hidden border-b border-border"
             onMouseEnter={() => setIsBannerPaused(true)}
             onMouseLeave={() => setIsBannerPaused(false)}
           >
@@ -241,10 +241,11 @@ export default function HomeContent() {
 
                     {/* Action buttons — retro styled */}
                     <div className="flex flex-wrap gap-3">
-                      <Link href={`/movie/${bannerMovie.id}`}>
-                        <button className="font-retro border border-primary bg-primary px-6 py-2.5 text-xs uppercase tracking-widest text-primary-foreground transition-colors duration-150 hover:bg-primary/80">
-                          VIEW DETAILS
-                        </button>
+                      <Link
+                        href={`/movie/${bannerMovie.id}`}
+                        className="font-retro border border-primary bg-primary px-6 py-2.5 text-xs uppercase tracking-widest text-primary-foreground transition-colors duration-150 hover:bg-primary/80"
+                      >
+                        VIEW DETAILS
                       </Link>
                       <button
                         onClick={handleBannerWatchlistToggle}

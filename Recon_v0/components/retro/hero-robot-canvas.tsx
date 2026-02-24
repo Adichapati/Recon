@@ -98,7 +98,7 @@ export function HeroRobotCanvas() {
           powerPreference: "high-performance",
           toneMapping: THREE.NoToneMapping,
         }}
-        style={{ background: "transparent" }}
+        style={{ background: "transparent", pointerEvents: "none" }}
       >
         <Suspense fallback={null}>
           <PerformanceGuard />

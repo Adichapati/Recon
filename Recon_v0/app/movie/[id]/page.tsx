@@ -191,7 +191,7 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
     <ProtectedLayout>
       <div className="min-h-screen">
         {/* Full-bleed cinematic hero */}
-        <section className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 overflow-hidden border-b border-border">
+        <section className="relative w-full overflow-hidden border-b border-border">
           <div className="relative aspect-video w-full max-h-[600px]">
             <Image
               src={movie.backdrop_path || "/placeholder.svg"}

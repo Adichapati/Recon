@@ -182,17 +182,18 @@ export default function NotFound() {
         </div>
 
         {/* CTA */}
-        <Link href="/">
-          <Button
-            variant="outline"
-            className="font-retro group border-primary/30 bg-transparent text-xs uppercase tracking-[0.2em] text-primary transition-all hover:border-primary hover:bg-primary/10"
-          >
+        <Button
+          asChild
+          variant="outline"
+          className="font-retro group border-primary/30 bg-transparent text-xs uppercase tracking-[0.2em] text-primary transition-all hover:border-primary hover:bg-primary/10"
+        >
+          <Link href="/">
             <span className="mr-2 inline-block transition-transform group-hover:-translate-x-0.5">
               {"<"}
             </span>
             RETURN TO BASE
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       {/* Corner bracket decorations */}

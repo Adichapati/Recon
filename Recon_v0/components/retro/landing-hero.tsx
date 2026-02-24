@@ -88,18 +88,20 @@ export function LandingHero() {
 
         {/* CTA buttons */}
         <motion.div className="mt-10 flex gap-4" {...fadeUp(0.25)}>
-          <Link href="/signup">
-            <button className="font-retro group relative border border-primary bg-primary px-7 py-3 text-xs uppercase tracking-widest text-primary-foreground transition-colors duration-200 hover:bg-transparent hover:text-primary">
-              GET STARTED
-              {/* Animated underline on hover */}
-              <span className="absolute bottom-0 left-0 h-px w-0 bg-primary transition-all duration-300 group-hover:w-full" />
-            </button>
+          <Link
+            href="/signup"
+            className="font-retro group relative border border-primary bg-primary px-7 py-3 text-xs uppercase tracking-widest text-primary-foreground transition-colors duration-200 hover:bg-transparent hover:text-primary"
+          >
+            GET STARTED
+            {/* Animated underline on hover */}
+            <span className="absolute bottom-0 left-0 h-px w-0 bg-primary transition-all duration-300 group-hover:w-full" />
           </Link>
-          <Link href="/login">
-            <button className="font-retro group relative border border-border px-7 py-3 text-xs uppercase tracking-widest text-muted-foreground transition-colors duration-200 hover:border-primary hover:text-primary">
-              SIGN IN
-              <span className="absolute bottom-0 left-0 h-px w-0 bg-primary transition-all duration-300 group-hover:w-full" />
-            </button>
+          <Link
+            href="/login"
+            className="font-retro group relative border border-border px-7 py-3 text-xs uppercase tracking-widest text-muted-foreground transition-colors duration-200 hover:border-primary hover:text-primary"
+          >
+            SIGN IN
+            <span className="absolute bottom-0 left-0 h-px w-0 bg-primary transition-all duration-300 group-hover:w-full" />
           </Link>
         </motion.div>
           </div>

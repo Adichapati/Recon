@@ -131,11 +131,11 @@ export function Navbar() {
                   </SheetHeader>
                   <nav className="mt-6 flex flex-col gap-1">
                     {navLinks.map((link) => (
-                      <Link key={link.href} href={link.href}>
-                        <Button variant="ghost" className="w-full justify-start rounded-sm font-retro text-xs uppercase tracking-wider">
+                      <Button key={link.href} asChild variant="ghost" className="w-full justify-start rounded-sm font-retro text-xs uppercase tracking-wider">
+                        <Link href={link.href}>
                           {link.label}
-                        </Button>
-                      </Link>
+                        </Link>
+                      </Button>
                     ))}
                   </nav>
                 </SheetContent>
@@ -143,16 +143,12 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <Link href="/login">
-                <Button variant="ghost" className="font-retro text-xs uppercase tracking-wider">
-                  Login
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="font-retro text-xs uppercase tracking-wider">
-                  Sign Up
-                </Button>
-              </Link>
+              <Button asChild variant="ghost" className="font-retro text-xs uppercase tracking-wider">
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button asChild className="font-retro text-xs uppercase tracking-wider">
+                <Link href="/signup">Sign Up</Link>
+              </Button>
             </>
           )}
         </div>
