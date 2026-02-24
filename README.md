@@ -22,6 +22,14 @@ A modern movie discovery and recommendation platform built with Next.js, featuri
 - 🔑 Token-based extension auth for secure cross-origin syncing
 - 🔐 Authentication via Google OAuth or email/password
 - 🌙 Dark retro-terminal theme with cinematic UI
+- 🤖 Procedural 3D robot mascot on the landing page (Three.js)
+- ✨ Ambient floating particle background (instanced mesh)
+- 📺 CRT page transition effect on route changes
+- 🃏 3D tilt-on-hover movie cards with cursor-following glow
+- 📡 Interactive "Signal Lost" 404 page with glitch text & CRT static
+- 📊 3D genre radar chart on profile (mouse-tilt interactive)
+- 🎞️ CRT poster frame on movie details & VHS tape header on watchlist
+- 🎵 Cassette tape loading spinner with animated reels
 - 📱 Fully responsive design
 
 ## Pages
@@ -99,10 +107,28 @@ The extension authenticates via `Authorization: Bearer <token>` headers. Tokens 
 ## Tech Stack
 
 - **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS v4
+- **3D / Animation**: Three.js, React Three Fiber, drei, Framer Motion
 - **Authentication**: NextAuth.js v5 (beta) with Google OAuth & Credentials
 - **Database**: Supabase (PostgreSQL)
 - **API**: TMDB for movie data
 - **Deployment**: Vercel
+
+## Retro UI System
+
+The app uses a custom retro-terminal design system (`#0b0b0b` background, `#c8a832` amber primary, `#4abfad` teal accent, Geist Mono font).
+
+| Feature | Location | Description |
+|---------|----------|-------------|
+| Procedural 3D Robot | Landing hero | BMO-inspired mascot with glitch animations, spark particles, and CRT screen — built procedurally in Three.js |
+| Ambient Particles | Site-wide | 80 instanced teal/amber dots floating upward with sine-wave motion |
+| CRT Page Transition | Site-wide | Screen darkens → squishes to a glowing horizontal line → fades out on route changes |
+| 3D Tilt Cards | All movie cards | Cards rotate ±6° toward cursor with perspective transform and radial teal glow |
+| Signal Lost 404 | `/not-found` | Canvas noise, scrambling glitch text, red pulsing LED, terminal error log |
+| Genre Radar | Profile | Three.js spider chart with amber data polygon, teal wireframe grid, mouse-tilt interaction |
+| CRT Poster Frame | Movie detail | Corner brackets, teal glow, NOW PLAYING label, scanline overlay on poster |
+| VHS Tape Header | Watchlist | Side colour stripes, decorative reel counter, gradient accent line |
+| Cassette Loader | Loading states | Spinning reels with spokes, tape body, "RECON MIX" label above progress bar |
+| Typewriter Reveal | Landing hero | Character-by-character heading animation with blinking cursor |
 
 ## Project Structure
 
@@ -128,7 +154,10 @@ MovieRec/
 │   │   ├── onboarding/          # Preference quiz
 │   │   ├── login/               # Login page
 │   │   └── signup/              # Signup page
-│   ├── components/              # React components (MovieCard, Navbar, etc.)
+│   ├── components/
+│   │   ├── retro/               # Retro UI components (3D models, particles, transitions)
+│   │   ├── layouts/             # Auth & main layout wrappers
+│   │   └── ui/                  # shadcn/ui primitives (Button, Card, etc.)
 │   ├── lib/                     # Utilities (watchlist, genres, TMDB, Supabase)
 │   └── hooks/                   # Custom hooks (useToast)
 ├── recon-extension/             # Chrome Extension (MV3)
