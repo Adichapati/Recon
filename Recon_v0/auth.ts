@@ -5,21 +5,20 @@ import Credentials from "next-auth/providers/credentials"
 import { getSupabaseAdminClient } from "@/lib/supabase"
 import { verifyPassword, type PasswordRecord } from "@/lib/password"
 
+// Auth.js v5 reads AUTH_SECRET from env automatically.
+// Ensure it's set even if only NEXTAUTH_SECRET is available.
+if (!process.env.AUTH_SECRET && process.env.NEXTAUTH_SECRET) {
+  process.env.AUTH_SECRET = process.env.NEXTAUTH_SECRET
+}
+
 export const { handlers, auth } = NextAuth({
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
-  // In production builds Auth.js is strict about host validation.
-  // Local `next build` / `next start` and many deployments (reverse proxies) need this.
   trustHost: true,
-  debug: process.env.NODE_ENV !== "production",
+  debug: true,  // Temporarily enable to diagnose production errors
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          scope: "openid email profile",
-        },
-      },
+      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     }),
     Credentials({
       name: "Email and Password",
