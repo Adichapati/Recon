@@ -1,18 +1,18 @@
 import NextAuth from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import CredentialsProvider from "next-auth/providers/credentials"
+import Google from "next-auth/providers/google"
+import Credentials from "next-auth/providers/credentials"
 
 import { getSupabaseAdminClient } from "@/lib/supabase"
 import { verifyPassword, type PasswordRecord } from "@/lib/password"
 
 export const { handlers, auth } = NextAuth({
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   // In production builds Auth.js is strict about host validation.
   // Local `next build` / `next start` and many deployments (reverse proxies) need this.
   trustHost: true,
   debug: process.env.NODE_ENV !== "production",
   providers: [
-    GoogleProvider({
+    Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
@@ -21,7 +21,7 @@ export const { handlers, auth } = NextAuth({
         },
       },
     }),
-    CredentialsProvider({
+    Credentials({
       name: "Email and Password",
       credentials: {
         email: { label: "Email", type: "email" },
